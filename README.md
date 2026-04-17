@@ -3,6 +3,7 @@
 
 Paisa.Log is a premium personal finance tracker designed with a "Privacy First" philosophy. Using high-end **zero-knowledge encryption**, your financial data is encrypted locally on your device before it ever touches the cloud.
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blueviolet)](https://github.com/akship/paisa-log/releases/tag/v1.0.0)
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://paisa-log.web.app)
 [![Tech Stack](https://img.shields.io/badge/tech-Next.js%20|%20Firebase%20|%20Tailwind-blue)](https://github.com/akship/paisa-log)
 
@@ -27,7 +28,7 @@ Paisa.Log is a premium personal finance tracker designed with a "Privacy First" 
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
 - **Style**: [Tailwind CSS](https://tailwindcss.com/) with specialized glassmorphism utilities.
 - **Backend/Auth**: [Firebase](https://firebase.google.com/) (Firestore, Auth, Hosting).
 - **Security**: Web Crypto API (**SubtleCrypto**) for client-side encryption.
