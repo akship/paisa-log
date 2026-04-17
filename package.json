@@ -1,6 +1,6 @@
 {
   "name": "paisa-log",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,13 +11,16 @@
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "date-fns": "^4.1.0",
-    "firebase": "^12.11.0",
+    "firebase": "^12.12.0",
     "lucide-react": "^1.7.0",
-    "next": "16.2.2",
+    "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hot-toast": "^2.6.0",
     "recharts": "^3.8.1"
+  },
+  "overrides": {
+    "serialize-javascript": "7.0.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
