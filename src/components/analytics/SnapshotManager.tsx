@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PortfolioSnapshot, deletePortfolioSnapshot } from "@/lib/firebase/firestore";
 import { formatINR } from "@/lib/utils";
 import { Edit2, Trash2, Calendar, History, ShieldAlert, ChevronDown, List } from "lucide-react";
@@ -15,6 +15,11 @@ interface Props {
 export default function SnapshotManager({ history, encryptionKey }: Props) {
   const [editingSnapshot, setEditingSnapshot] = useState<PortfolioSnapshot | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const sortedHistory = useMemo(
+    () => [...history].sort((a, b) => b.monthYear.localeCompare(a.monthYear)),
+    [history]
+  );
 
   const handleDelete = async (id: string, month: string) => {
     if (window.confirm(`Are you sure you want to permanently delete the snapshot for ${month}? This cannot be undone.`)) {
@@ -36,7 +41,7 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {history.sort((a,b) => b.monthYear.localeCompare(a.monthYear)).map((s) => {
+        {sortedHistory.map((s) => {
           const isLocked = s.totalNetWorth === -1;
           
           return (

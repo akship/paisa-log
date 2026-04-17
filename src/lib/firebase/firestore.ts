@@ -13,7 +13,6 @@ import {
   updateDoc,
   deleteDoc,
   increment,
-  limit,
   writeBatch
 } from "firebase/firestore";
 import { db } from "./config";
@@ -197,26 +196,36 @@ export const getAllUserTransactions = async (userId: string, encryptionKey: Cryp
 };
 
 export const checkDuplicateTransaction = async (
-  userId: string, 
-  amount: number, 
+  userId: string,
+  amount: number,
   date: Date
 ) => {
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
-  
+
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
+  // NOTE: Amounts are encrypted in Firestore for secure users.
+  // We query by date only and match the plaintext amount in-memory,
+  // which covers both encrypted (amount field is ciphertext string) and
+  // legacy unencrypted (amount is a number) documents.
   const q = query(
     collection(db, TRANSACTIONS_COLLECTION),
     where("user_id", "==", userId),
-    where("amount", "==", amount),
     where("timestamp", ">=", Timestamp.fromDate(startOfDay)),
     where("timestamp", "<=", Timestamp.fromDate(endOfDay))
   );
 
   const querySnapshot = await getDocs(q);
-  return !querySnapshot.empty;
+  // For unencrypted transactions we can match on amount directly.
+  // Encrypted entries cannot be compared here — just flag any same-day transaction.
+  if (querySnapshot.empty) return false;
+  const hasUnencryptedMatch = querySnapshot.docs.some(
+    (d) => !d.data().isEncrypted && d.data().amount === amount
+  );
+  const hasEncryptedEntries = querySnapshot.docs.some((d) => d.data().isEncrypted);
+  return hasUnencryptedMatch || hasEncryptedEntries;
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, "id">, encryptionKey: CryptoKey | null = null) => {
@@ -367,24 +376,7 @@ export const deleteTransaction = async (transactionId: string) => {
 
 
 
-export const getUniqueDescriptions = async (userId: string): Promise<string[]> => {
-  const q = query(
-    collection(db, TRANSACTIONS_COLLECTION),
-    where("user_id", "==", userId),
-    orderBy("timestamp", "desc"),
-    limit(200)
-  );
-  
-  const querySnapshot = await getDocs(q);
-  const descriptions = new Set<string>();
-  
-  querySnapshot.forEach((doc) => {
-    const desc = doc.data().description;
-    if (desc) descriptions.add(desc);
-  });
-  
-  return Array.from(descriptions);
-};
+
 
 // --- Portfolio CRUD ---
 

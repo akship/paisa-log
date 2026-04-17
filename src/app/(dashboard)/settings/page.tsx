@@ -3,35 +3,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth";
 import { updateUserPreferences } from "@/lib/firebase/firestore";
-import { BASE_EXPENSE_CATEGORIES, BASE_INCOME_CATEGORIES } from "@/lib/constants";
+import { BASE_EXPENSE_CATEGORIES, BASE_INCOME_CATEGORIES, EXPENSE_REMAP, INCOME_REMAP } from "@/lib/constants";
 import { Save, User, CheckCircle2, Hash, ArrowDownRight, ArrowUpRight, Plus, X, ShieldCheck, Key, Lock, AlertCircle } from "lucide-react";
 import ChangePinModal from "@/components/auth/ChangePinModal";
 
 import PageHeader from "@/components/layout/PageHeader";
 import SectionHeader from "@/components/layout/SectionHeader";
 
-// ---------------------------------------------------------------------------
-// Category remapping — same mapping as DataContext migration
-// Applied here so Settings shows the correct list even before server migration runs.
-// ---------------------------------------------------------------------------
-const EXPENSE_REMAP: Record<string, string> = {
-  "Bills & Utilities": "Bills & EMIs",
-  "EMI":               "Bills & EMIs",
-  "Insurance":         "Bills & EMIs",
-  "Shopping":          "Shopping & Self Care",
-  "Medicines":         "Shopping & Self Care",
-  "Entertainment":     "Misc",
-  "Travel":            "Vacation",
-  "Taxes":             "Misc",
-  "Other":             "Misc",
-};
-const INCOME_REMAP: Record<string, string> = {
-  "Investment Gain":    "Interest & Gains",
-  "Interest/Dividends": "Interest & Gains",
-  "Cashback/Rewards":   "Cashback & Rewards",
-  "Bussiness":          "Other",
-  "Rental Income":      "Other",
-};
 
 function remapCategories(list: string[], remap: Record<string, string>, validSet: Set<string>): string[] {
   const seen = new Set<string>();
@@ -52,7 +30,6 @@ function remapCategories(list: string[], remap: Record<string, string>, validSet
 
 const VALID_EXPENSES = new Set(BASE_EXPENSE_CATEGORIES);
 const VALID_INCOME   = new Set(BASE_INCOME_CATEGORIES);
-// ---------------------------------------------------------------------------
 
 export default function SettingsPage() {
   const { user, preferences, refreshPreferences } = useAuth();

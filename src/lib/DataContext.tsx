@@ -9,12 +9,8 @@ import {
   subscribeToPortfolioHistory, 
   PortfolioItem, 
   PortfolioSnapshot,
-  updateTransaction,
 } from "@/lib/firebase/firestore";
-import { 
-  BASE_EXPENSE_CATEGORIES, 
-  BASE_INCOME_CATEGORIES, 
-} from "@/lib/constants";
+
 
 // ---------------------------------------------------------------------------
 
