@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper: Check if a user owns the document and is not trying to change the owner
+    function isOwner(currentData) {
+      return request.auth != null && currentData.user_id == request.auth.uid;
+    }
+
+    // Helper: Check if the incoming data preserves ownership
+    function preservesOwnership() {
+      return request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Helper: General Transaction Validation
+    function isValidTransaction() {
+      let data = request.resource.data;
+      let isEncrypted = data.get('isEncrypted', false);
+      
+      return data.type in ['income', 'expense']
+        && (isEncrypted 
+            ? (data.amount is string && data.category is string)
+            : (data.amount is number && data.amount != 0 && data.category is string && data.category.size() > 0)
+           );
+    }
+
+    // Helper: General Portfolio Validation
+    function isValidPortfolioItem() {
+      let data = request.resource.data;
+      let isEncrypted = data.get('isEncrypted', false);
+      
+      return data.categoryGroup in ['LIQUID', 'INVESTMENTS', 'RECEIVABLES', 'LIABILITIES']
+        && (isEncrypted
+            ? (data.amount is string && data.name is string)
+            : (data.amount is number && data.name is string && data.name.size() > 0)
+           );
+    }
+
+    // Allow users to access their own transactions
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null && preservesOwnership() && isValidTransaction();
+      allow update: if isOwner(resource.data) && preservesOwnership() && isValidTransaction();
+      allow delete: if isOwner(resource.data);
+    }
+    
+    // Allow users to access their own portfolio assets/liabilities
+    match /portfolio/{portfolioId} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null && preservesOwnership() && isValidPortfolioItem();
+      allow update: if isOwner(resource.data) && preservesOwnership() && isValidPortfolioItem();
+      allow delete: if isOwner(resource.data);
+    }
+
+    // Allow users to access their own portfolio history snapshots
+    match /portfolio_history/{snapshotId} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null && preservesOwnership();
+      allow update: if isOwner(resource.data) && preservesOwnership();
+      allow delete: if isOwner(resource.data);
+    }
+
+    // Allow users to access their own profile/preferences
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
