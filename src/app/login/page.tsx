@@ -38,7 +38,7 @@ export default function LoginPage() {
           </div>
           
           <h1 className="z-10 text-3xl font-bold tracking-tight font-display text-on-surface mb-2">
-            Paisa<span className="text-primary">.Log</span>
+            Paisa<span className="text-primary">.log</span>
           </h1>
           
           <p className="z-10 text-on-surface-variant mb-10 text-sm">

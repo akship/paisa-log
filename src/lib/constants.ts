@@ -50,3 +50,14 @@ export const INCOME_REMAP: Record<string, string> = {
   "Bussiness":          "Other",
   "Rental Income":      "Other",
 };
+
+export const PRISM_COLORS = [
+  "#0ea5e9", // Sky 500
+  "#06b6d4", // Cyan 500
+  "#3b82f6", // Blue 500
+  "#6366f1", // Indigo 500
+  "#2dd4bf", // Teal 500
+  "#38bdf8", // Sky 400
+  "#22d3ee", // Cyan 400
+  "#60a5fa", // Blue 400
+];

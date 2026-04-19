@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { DataProvider } from "@/lib/DataContext";
+import { PortfolioProvider } from "@/lib/PortfolioContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, preferences, loading, logout } = useAuth();
@@ -45,6 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DataProvider>
+      <PortfolioProvider>
       <div className="flex h-screen w-full bg-[#060912] text-on-surface overflow-hidden relative font-sans selection:bg-primary/30 selection:text-white">
 
         {/* Background Ornaments - Deep Space Aesthetic */}
@@ -97,26 +99,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 flex flex-col relative min-w-0 overflow-y-auto no-scrollbar pb-32 md:pb-0 z-0">
 
           {/* Top-Right Profile Container (Desktop Only) */}
-          <div className="hidden md:flex absolute top-10 right-10 z-50 items-center gap-4">
-            <NotificationBell />
-            <Link href="/settings" className="flex items-center hover:scale-[1.02] transition-transform active:scale-95">
-              <div className="flex items-center gap-4 px-5 py-3 rounded-3xl glass-card backdrop-blur-xl border-white/10 shadow-xl">
-                <div className="flex flex-col items-end min-w-0">
-                  <span className="text-xs font-black truncate text-shadow-glow tracking-tight text-right">{displayName}</span>
-                  <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-bold">Profile</span>
+          <div className="hidden md:flex absolute top-10 right-10 z-50 items-center gap-5">
+            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 shadow-xl hover:bg-white/[0.05] transition-colors cursor-pointer group">
+              <NotificationBell />
+            </div>
+            <Link href="/settings" className="flex items-center hover:scale-[1.02] transition-all active:scale-95 group/profile">
+              <div className="flex items-center gap-4 px-6 py-2.5 rounded-[2rem] glass-card backdrop-blur-2xl border-white/10 bg-white/[0.02] shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent opacity-0 group-hover/profile:opacity-100 transition-opacity duration-1000" />
+                
+                <div className="flex flex-col items-end min-w-0 relative z-10">
+                  <span className="text-sm font-black truncate text-white tracking-tight">{displayName}</span>
+                  <span className="text-[8px] uppercase tracking-[0.2em] text-white/30 font-black">Profile</span>
                 </div>
-                <div className="relative group/avatar">
+
+                <div className="relative group/avatar flex-shrink-0">
+                  <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-md opacity-0 group-hover/profile:opacity-100 transition-opacity duration-700" />
                   <img 
                     src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`} 
                     alt="User" 
-                    className="h-10 w-10 rounded-2xl ring-2 ring-white/10 object-cover relative z-20 shadow-2xl transition-transform duration-500 group-hover/avatar:scale-110" 
+                    className="h-11 w-11 rounded-2xl ring-1 ring-white/10 object-cover relative z-20 shadow-2xl grayscale-[0.2] transition-all duration-700 group-hover/profile:grayscale-0 group-hover/profile:scale-105" 
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = `https://ui-avatars.com/api/?name=U&background=6366f1&color=fff`;
                     }}
                   />
-                  <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-secondary border-2 border-[#0a0e1a] z-30 shadow-glow-secondary" />
-                  <div className="absolute inset-0 rounded-2xl bg-primary/20 blur opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-500 z-10" />
+                  {/* Online Indicator */}
+                  <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-secondary border-[3px] border-[#0a0e1a] z-30 shadow-glow-secondary shadow-black/50" />
                 </div>
               </div>
             </Link>
@@ -148,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </header>
 
           {/* Dynamic Page Content */}
-          <div className="flex-1 p-6 md:p-10 md:pt-32 lg:p-12 lg:pt-36 animate-in fade-in slide-in-from-bottom-2 duration-1000">
+          <div className="flex-1 px-6 pt-24 md:px-12 md:pt-28 lg:px-16 lg:pt-32 animate-in fade-in slide-in-from-bottom-2 duration-1000">
             {children}
           </div>
         </main>
@@ -185,7 +193,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {(pathname === "/" || pathname === "/portfolio") && (
           <button
             onClick={() => {
-              const eventName = pathname === "/" ? "paisa-open-add-transaction" : "paisa-open-add-portfolio";
+              const eventName = pathname === "/" ? "pl-open-add-transaction" : "pl-open-add-portfolio";
               window.dispatchEvent(new CustomEvent(eventName));
             }}
             className="fixed bottom-28 md:bottom-12 right-6 md:right-12 z-[60] flex items-center gap-3 h-14 md:h-16 px-6 md:px-8 rounded-full prism-orb border border-white/10 group cursor-pointer overflow-hidden backdrop-blur-3xl transition-all duration-500 hover:scale-[1.05] shadow-2xl animate-in fade-in slide-in-from-bottom-5 duration-1000"
@@ -214,6 +222,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         )}
       </div>
+      </PortfolioProvider>
     </DataProvider>
   );
 }

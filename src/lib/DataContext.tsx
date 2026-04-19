@@ -5,11 +5,15 @@ import { useAuth } from "@/lib/firebase/auth";
 import { 
   subscribeToTransactions, 
   Transaction, 
-  subscribeToPortfolio, 
   subscribeToPortfolioHistory, 
   PortfolioItem, 
   PortfolioSnapshot,
+  UserPreferences,
+  getUserPreferences
 } from "@/lib/firebase/firestore";
+import { useMemo } from "react";
+import { startOfMonth, eachMonthOfInterval, format } from "date-fns";
+import { BASE_EXPENSE_CATEGORIES, BASE_INCOME_CATEGORIES } from "./constants";
 
 
 // ---------------------------------------------------------------------------
@@ -17,19 +21,47 @@ import {
 interface DataContextState {
   transactions: Transaction[];
   transactionsLoading: boolean;
-  portfolioItems: PortfolioItem[];
-  portfolioHistory: PortfolioSnapshot[];
-  portfolioLoading: boolean;
-  loadPortfolioData: () => void;
+  isWarning: boolean;
+  error: string | null;
+  preferences: UserPreferences | null;
+  categories: {
+    expense: string[];
+    income: string[];
+  };
+  currentMonthStats: {
+    income: number;
+    expense: number;
+    balance: number;
+  };
+  monthsList: { value: string; label: string }[];
+  forceStopLoading: () => void;
+  loadMore: () => void;
+  loadFullHistory: () => void;
+  hasMore: boolean;
+  isFullHistoryLoaded: boolean;
 }
 
 const DataContext = createContext<DataContextState>({
   transactions: [],
   transactionsLoading: true,
-  portfolioItems: [],
-  portfolioHistory: [],
-  portfolioLoading: true,
-  loadPortfolioData: () => {},
+  isWarning: false,
+  error: null,
+  preferences: null,
+  categories: {
+    expense: [],
+    income: [],
+  },
+  currentMonthStats: {
+    income: 0,
+    expense: 0,
+    balance: 0,
+  },
+  monthsList: [],
+  forceStopLoading: () => {},
+  loadMore: () => {},
+  loadFullHistory: () => {},
+  hasMore: false,
+  isFullHistoryLoaded: false,
 });
 
 export const useData = () => useContext(DataContext);
@@ -38,14 +70,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user, encryptionKey } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
-  const [portfolioHistory, setPortfolioHistory] = useState<PortfolioSnapshot[]>([]);
-  const [portfolioLoading, setPortfolioLoading] = useState(true);
-  const [shouldLoadPortfolio, setShouldLoadPortfolio] = useState(false);
+  const [isWarning, setIsWarning] = useState(false);
+  const loadingRef = React.useRef(true);
+  const [error, setError] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [displayLimit, setDisplayLimit] = useState(50);
+  const [isFullHistoryLoaded, setIsFullHistoryLoaded] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  const loadPortfolioData = useCallback(() => {
-    setShouldLoadPortfolio(true);
-  }, []);
+
+  // Fetch preferences
+  useEffect(() => {
+    if (!user) {
+      setPreferences(null);
+      return;
+    }
+
+    const fetchPrefs = async () => {
+      const prefs = await getUserPreferences(user.uid);
+      setPreferences(prefs);
+    };
+
+    fetchPrefs();
+  }, [user]);
 
 
   // Single subscription for transactions — shared across Overview + Analytics
@@ -53,71 +100,220 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       setTransactions([]);
       setTransactionsLoading(false);
+      setIsWarning(false);
       return;
     }
 
-    setTransactionsLoading(true);
-    const unsubscribe = subscribeToTransactions(
-      user.uid,
-      (data) => {
-        setTransactions(data);
-        setTransactionsLoading(false);
-      },
-      encryptionKey,
-      (error) => {
-        console.error("Transactions subscription error:", error);
-        setTransactionsLoading(false);
-      }
-    );
+    loadingRef.current = true;
+    setTransactionsLoading(transactions.length === 0);
+    setIsWarning(false);
+    setError(null);
 
-    return () => unsubscribe();
-  }, [user, encryptionKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Single subscription for portfolio — shared across Portfolio + NotificationBell
-  useEffect(() => {
-    if (!user || !shouldLoadPortfolio) {
-      if (!user) {
-        setPortfolioItems([]);
-        setPortfolioHistory([]);
-        setPortfolioLoading(false);
+    // Warning timeout (5 seconds)
+    const warningTimeout = setTimeout(() => {
+      if (loadingRef.current) {
+        console.warn("Slow connection detected: Transactions still loading after 5s");
+        setIsWarning(true);
       }
-      return;
+    }, 5000);
+
+    // Safety timeout (10 seconds)
+    const errorTimeout = setTimeout(() => {
+      if (loadingRef.current) {
+        console.warn("Safety timeout triggered: Transactions still loading after 10s");
+        setTransactionsLoading(false);
+        loadingRef.current = false;
+        setError("Your network is blocking the database connection. This is often caused by AdBlockers or strict firewalls. Try disabling extensions for this site.");
+      }
+    }, 10000);
+
+    let unsubscribe: () => void;
+
+    if (isFullHistoryLoaded) {
+      unsubscribe = subscribeToTransactions(
+        user.uid,
+        (data) => {
+          setTransactions(data);
+          setTransactionsLoading(false);
+          setHasMore(false);
+          setIsWarning(false);
+          loadingRef.current = false;
+        },
+        encryptionKey,
+        {}, // Options: fetch all
+        (err) => {
+          setTransactionsLoading(false);
+          setError(err.message);
+        }
+      );
+    } else {
+      // Optimized mode: Combine latest N + all current month
+      const startOfCurrentMonth = startOfMonth(new Date());
+      let latestData: Transaction[] = [];
+      let monthData: Transaction[] = [];
+
+      const updateMerged = () => {
+        const merged = Array.from(new Map([...latestData, ...monthData].map(t => [t.id, t])).values())
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        
+        setTransactions(merged);
+        setTransactionsLoading(false);
+        setIsWarning(false);
+        loadingRef.current = false;
+        
+        // If latest fetch returned less than limit, we reached the end
+        if (latestData.length < displayLimit) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+      };
+
+      const unsubLatest = subscribeToTransactions(
+        user.uid,
+        (data) => {
+          latestData = data;
+          updateMerged();
+        },
+        encryptionKey,
+        { limitCount: displayLimit }
+      );
+
+      const unsubMonth = subscribeToTransactions(
+        user.uid,
+        (data) => {
+          monthData = data;
+          updateMerged();
+        },
+        encryptionKey,
+        { startDate: startOfCurrentMonth }
+      );
+
+      unsubscribe = () => {
+        unsubLatest();
+        unsubMonth();
+      };
     }
-
-    setPortfolioLoading(true);
-    let loadedPortfolio = false;
-    let loadedHistory = false;
-
-    const checkDone = () => {
-      if (loadedPortfolio && loadedHistory) setPortfolioLoading(false);
-    };
-
-    const unsubPortfolio = subscribeToPortfolio(user.uid, (data) => {
-      setPortfolioItems(data);
-      loadedPortfolio = true;
-      checkDone();
-    }, encryptionKey);
-
-    const unsubHistory = subscribeToPortfolioHistory(user.uid, (data) => {
-      setPortfolioHistory(data);
-      loadedHistory = true;
-      checkDone();
-    }, encryptionKey);
 
     return () => {
-      unsubPortfolio();
-      unsubHistory();
+      unsubscribe();
+      clearTimeout(warningTimeout);
+      clearTimeout(errorTimeout);
     };
-  }, [user, encryptionKey, shouldLoadPortfolio]);
+  }, [user, encryptionKey, displayLimit, isFullHistoryLoaded]);
+
+
+
+  const categories = useMemo(() => {
+    const expense = preferences?.enabledExpenseCategories || [...BASE_EXPENSE_CATEGORIES];
+    const income = preferences?.enabledIncomeCategories || [...BASE_INCOME_CATEGORIES];
+    
+    return {
+      expense: [...expense].sort((a, b) => a.localeCompare(b)),
+      income: [...income].sort((a, b) => a.localeCompare(b))
+    };
+  }, [preferences]);
+
+  const currentMonthStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthlyTx = transactions.filter(t =>
+      t.timestamp.getMonth() === currentMonth && t.timestamp.getFullYear() === currentYear
+    );
+
+    const income = monthlyTx
+      .filter(t => t.type === "income")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const expense = monthlyTx
+      .filter(t => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      income,
+      expense,
+      balance: income - expense
+    };
+  }, [transactions]);
+
+  const monthsList = useMemo(() => {
+    const now = new Date();
+    const currentMonth = startOfMonth(now);
+    
+    // Determine the lower bound (Joining Date)
+    const joinedDate = user?.metadata?.creationTime 
+      ? new Date(user.metadata.creationTime) 
+      : now;
+    const startBound = startOfMonth(joinedDate);
+
+    // Optimized view: Show months since joining (up to 24)
+    if (!isFullHistoryLoaded) {
+      const months = [];
+      for (let i = 0; i < 24; i++) {
+        const d = new Date(currentMonth);
+        d.setMonth(d.getMonth() - i);
+        
+        // Stop if we go before the joining month
+        if (d < startBound) break;
+
+        months.push({
+          value: format(d, "yyyy-MM"),
+          label: format(d, "MMMM yyyy")
+        });
+      }
+      return months;
+    }
+
+    // Full history mode: If there are transactions earlier than join date (rare), 
+    // we use the earliest transaction, otherwise joined date.
+    const earliestTxDate = transactions.length > 0 
+      ? transactions.reduce((min, tx) => tx.timestamp < min ? tx.timestamp : min, transactions[0].timestamp)
+      : joinedDate;
+    
+    const start = startOfMonth(earliestTxDate < joinedDate ? earliestTxDate : joinedDate);
+    const end = currentMonth;
+
+    try {
+      const result = eachMonthOfInterval({ start, end });
+      return result.reverse().map(date => ({
+        value: format(date, "yyyy-MM"),
+        label: format(date, "MMMM yyyy")
+      }));
+    } catch (e) {
+      // Fallback in case of invalid interval
+      return [{ 
+        value: format(now, "yyyy-MM"), 
+        label: format(now, "MMMM yyyy") 
+      }];
+    }
+  }, [transactions, isFullHistoryLoaded, user]);
 
   return (
     <DataContext.Provider value={{
       transactions,
       transactionsLoading,
-      portfolioItems,
-      portfolioHistory,
-      portfolioLoading,
-      loadPortfolioData,
+      isWarning,
+      error,
+      preferences,
+      categories,
+      currentMonthStats,
+      monthsList,
+      forceStopLoading: () => {
+        setTransactionsLoading(false);
+        loadingRef.current = false;
+      },
+      loadMore: () => {
+        if (!isFullHistoryLoaded && hasMore) {
+          setDisplayLimit(prev => prev + 50);
+        }
+      },
+      loadFullHistory: () => {
+        setIsFullHistoryLoaded(true);
+      },
+      hasMore,
+      isFullHistoryLoaded
     }}>
       {children}
     </DataContext.Provider>

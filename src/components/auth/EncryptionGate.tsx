@@ -16,6 +16,8 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
   const [hasConsented, setHasConsented] = useState(false);
   const [migrationStats, setMigrationStats] = useState({ current: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const [isThrottled, setIsThrottled] = useState(false);
 
   // If auth or vault sync is still loading, show a neutral loader
   if (authLoading || isVaultLoading) {
@@ -40,6 +42,8 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
       return;
     }
 
+    if (isThrottled) return;
+
     setIsDeriving(true);
     setError(null);
 
@@ -61,15 +65,11 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
         try {
           const decrypted = await CryptoUtils.decryptString(preferences.pinVerificationToken, key);
           if (decrypted !== VAULT_CANARY) {
-            setError("Incorrect PIN. Please try again.");
-            setIsDeriving(false);
-            return;
+            throw new Error("Invalid PIN");
           }
         } catch (err) {
-          // Decryption failure (invalid HMAC/tag) means wrong key
-          setError("Incorrect PIN. Please try again.");
-          setIsDeriving(false);
-          return;
+          // Failure logic moved to catch block for consistency
+          throw new Error("Invalid PIN");
         }
       } else {
         // First time setup OR legacy user transition - create the verification token
@@ -81,14 +81,29 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
       }
       
       setEncryptionKey(key);
+      setAttempts(0);
 
       // Trigger Migration if in setup mode
       if (isSetupMode) {
         await startMigration(key);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Vault unlock failed:", err);
-      setError("Failed to unlock vault. Check your connection.");
+      
+      const isIncorrectPin = err.message === "Invalid PIN";
+      
+      if (isIncorrectPin) {
+        setAttempts(prev => prev + 1);
+        setError(`Incorrect PIN. Attempt ${attempts + 1}${attempts >= 2 ? ". Please slow down." : ""}`);
+        setIsThrottled(true);
+        // Clear PIN on failure for extra friction
+        setPin("");
+        // Artificial delay to prevent brute-forcing
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setIsThrottled(false);
+      } else {
+        setError("Failed to unlock vault. Check your connection.");
+      }
     } finally {
       setIsDeriving(false);
     }
@@ -185,7 +200,12 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
                 disabled={isDeriving || pin.length !== 6 || (isSetupMode && !hasConsented)}
                 className="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3 overflow-hidden group"
               >
-                {isDeriving ? (
+                {isThrottled ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin text-tertiary" />
+                    Cooling down...
+                  </>
+                ) : isDeriving ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
                     Deriving Key...

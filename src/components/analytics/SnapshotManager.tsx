@@ -6,6 +6,8 @@ import { formatINR } from "@/lib/utils";
 import { Edit2, Trash2, Calendar, History, ShieldAlert, ChevronDown, List } from "lucide-react";
 import { toast } from "react-hot-toast";
 import EditSnapshotModal from "./EditSnapshotModal";
+import { usePortfolio } from "@/lib/PortfolioContext";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   history: PortfolioSnapshot[];
@@ -13,8 +15,10 @@ interface Props {
 }
 
 export default function SnapshotManager({ history, encryptionKey }: Props) {
+  const { historyLimit, loadFullHistory, portfolioLoading } = usePortfolio();
   const [editingSnapshot, setEditingSnapshot] = useState<PortfolioSnapshot | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isExpanding, setIsExpanding] = useState(false);
 
   const sortedHistory = useMemo(
     () => [...history].sort((a, b) => b.monthYear.localeCompare(a.monthYear)),
@@ -31,6 +35,13 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
         console.error(err);
       }
     }
+  };
+
+  const handleShowMore = () => {
+    setIsExpanding(true);
+    loadFullHistory();
+    // Reset expanding state after a short delay to allow subscription to kick in
+    setTimeout(() => setIsExpanding(false), 2000);
   };
 
   return (
@@ -91,7 +102,7 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
                 <div className="flex items-center gap-3">
                   {!isLocked && s.items && (
                     <button
-                      onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                      onClick={() => s.id && setExpandedId(expandedId === s.id ? null : s.id)}
                       className={`p-3 rounded-2xl border transition-all ${expandedId === s.id ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-white/5 border-transparent text-white/40 hover:text-white'}`}
                       title="Show Breakdown"
                     >
@@ -144,6 +155,28 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
           );
         })}
       </div>
+
+      {historyLimit !== undefined && (
+        <div className="flex justify-center mt-12 pb-12">
+          <button
+            onClick={handleShowMore}
+            disabled={isExpanding || portfolioLoading}
+            className="group relative px-8 py-4 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-2xl transition-all duration-500 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+            <div className="flex items-center gap-3">
+              {isExpanding ? (
+                <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+              ) : (
+                <History className="h-4 w-4 text-blue-400 group-hover:rotate-12 transition-transform duration-500" />
+              )}
+              <span className="text-[10px] font-black text-white/40 group-hover:text-white/70 uppercase tracking-[0.4em] transition-colors leading-none">
+                {isExpanding ? "Syncing Archives..." : "Access Historical Logs"}
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
 
       <EditSnapshotModal 
         isOpen={!!editingSnapshot}

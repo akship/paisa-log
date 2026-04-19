@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useData } from "@/lib/DataContext";
+import { usePortfolio } from "@/lib/PortfolioContext";
 import { Bell, Camera, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
 export default function NotificationBell() {
-  const { portfolioItems: items, portfolioHistory: history } = useData();
+  const { portfolioItems: items, portfolioHistory: history } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
 
   const currentMonthYear = format(new Date(), "yyyy-MM");

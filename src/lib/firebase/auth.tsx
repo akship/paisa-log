@@ -161,6 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       encryptionKey, 
       setEncryptionKey: updateEncryptionKey, 
       loading, 
+      isVaultLoading,
       signInWithGoogle, 
       logout, 
       refreshPreferences 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { formatINR } from "@/lib/utils";
@@ -33,31 +33,17 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
   const [suggestions, setSuggestions] = useState<{desc: string, cat: string}[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const { transactions } = useData();
+  const { transactions, categories: dataCategories } = useData();
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  // Derive Sorted Categories
-  const getSortedCategories = () => {
-    if (!preferences) return [];
-    
-    const baseList = type === "expense" 
-      ? preferences.enabledExpenseCategories 
-      : preferences.enabledIncomeCategories;
-    
-    const usage = type === "expense"
-      ? preferences.categoryUsage.expense
-      : preferences.categoryUsage.income;
-
-    // Sort by usage count (descending)
-    const sorted = [...baseList].sort((a, b) => {
-      const countA = usage[a.replace(/\./g, '_')] || 0;
-      const countB = usage[b.replace(/\./g, '_')] || 0;
-      return countB - countA;
-    });
+  // Derive Sorted Categories from DataContext
+  const sortedCategories = useMemo(() => {
+    const list = type === "expense" ? dataCategories.expense : dataCategories.income;
+    const sorted = [...list];
 
     // Ensure initialData category is present even if disabled
     if (initialData && initialData.type === type && !sorted.includes(initialData.category)) {
@@ -65,9 +51,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
     }
 
     return sorted;
-  };
-
-  const sortedCategories = getSortedCategories();
+  }, [dataCategories, type, initialData]);
 
   // Set default category when type changes or categories load
   useEffect(() => {
@@ -132,7 +116,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
     try {
       if (!initialData) {
         // Duplicate Check only for new entries
-        const isDuplicate = await checkDuplicateTransaction(user.uid, numAmount, txDate);
+        const isDuplicate = await checkDuplicateTransaction(user.uid, numAmount, txDate, category, description, encryptionKey);
         if (isDuplicate) {
           if (!window.confirm(`A transaction for ${formatINR(numAmount)} was already logged today. Proceed anyway?`)) {
             setLoading(false);
@@ -228,7 +212,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
               }`}
             >
               {type === "income" && <div className="absolute inset-0 bg-secondary/10 animate-pulse" />}
-              <ArrowDownRight className={`h-3.5 w-3.5 stroke-[3px] transition-colors ${type === "income" ? "text-secondary" : ""}`} /> Income
+              <ArrowDownRight className={`h-3.5 w-3.5 stroke-[3px] transition-colors ${type === "income" ? "text-secondary" : ""}`} /> Inflow
             </button>
           </div>
 

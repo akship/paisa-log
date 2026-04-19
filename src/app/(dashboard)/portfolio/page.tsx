@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/firebase/auth";
-import { useData } from "@/lib/DataContext";
+import { usePortfolio } from "@/lib/PortfolioContext";
 import { 
   savePortfolioSnapshot,
   PortfolioItem, 
@@ -13,18 +13,29 @@ import { formatINR } from "@/lib/utils";
 import { Plus, Wallet, ShieldCheck, Info, Camera, TrendingUp, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import PageHeader from "@/components/layout/PageHeader";
 import PortfolioCategoryCard from "@/components/portfolio/PortfolioCategoryCard";
 import AddPortfolioItemModal from "@/components/portfolio/AddPortfolioItemModal";
+import PageLoading from "@/components/layout/PageLoading";
 
 export default function PortfolioPage() {
   const { user, encryptionKey } = useAuth();
   const { 
-    portfolioItems: items, 
-    portfolioHistory: history, 
+    portfolioItems: items,
     portfolioLoading: loading,
-    loadPortfolioData 
-  } = useData();
+    loadPortfolioData,
+    netWorth,
+    liquid,
+    investments,
+    receivables,
+    liabilities,
+    momChange,
+    momPercent,
+    snapshotsThisMonth,
+    canTakeSnapshot,
+  } = usePortfolio();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -33,46 +44,36 @@ export default function PortfolioPage() {
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
 
-  const currentMonthYear = format(new Date(), "yyyy-MM");
-  const hasSnapshotThisMonth = history.some(s => s.monthYear === currentMonthYear);
-
   // Handle Global FAB Action
   useEffect(() => {
     const handleOpenModal = () => setIsModalOpen(true);
-    window.addEventListener('paisa-open-add-portfolio', handleOpenModal);
-    return () => window.removeEventListener('paisa-open-add-portfolio', handleOpenModal);
+    window.addEventListener('pl-open-add-portfolio', handleOpenModal);
+    return () => window.removeEventListener('pl-open-add-portfolio', handleOpenModal);
   }, []);
+
+  const currentMonthYear = format(new Date(), "yyyy-MM");
 
   const groupItems = (group: PortfolioCategoryGroup) => items.filter(i => i.categoryGroup === group);
 
-  const calculateTotal = (group: PortfolioCategoryGroup) => 
-    groupItems(group).reduce((sum, i) => sum + i.amount, 0);
-
-  const liquid = calculateTotal("LIQUID");
-  const investments = calculateTotal("INVESTMENTS");
-  const receivables = calculateTotal("RECEIVABLES");
-  const liabilities = calculateTotal("LIABILITIES");
-
-  const netWorth = (liquid + investments + receivables) - liabilities;
-
-  // MoM Growth Logic
-  const previousSnapshot = history.length > 0 ? (history[0].monthYear === currentMonthYear ? history[1] : history[0]) : null;
-  const momChange = previousSnapshot ? netWorth - previousSnapshot.totalNetWorth : 0;
-  const momPercent = previousSnapshot && previousSnapshot.totalNetWorth !== 0 
-    ? (momChange / previousSnapshot.totalNetWorth) * 100 
-    : 0;
-
   const handleSaveSnapshot = async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error("You must be logged in to save snapshots");
+      return;
+    }
+    
     setSavingSnapshot(true);
-    const snapshotItems = {
-      LIQUID: groupItems("LIQUID").map(i => ({ name: i.name, amount: i.amount })),
-      INVESTMENTS: groupItems("INVESTMENTS").map(i => ({ name: i.name, amount: i.amount })),
-      RECEIVABLES: groupItems("RECEIVABLES").map(i => ({ name: i.name, amount: i.amount })),
-      LIABILITIES: groupItems("LIABILITIES").map(i => ({ name: i.name, amount: i.amount })),
-    };
-
     try {
+      if (!encryptionKey) {
+        throw new Error("Encryption key missing. Please ensure your PIN is entered correctly.");
+      }
+
+      const snapshotItems = {
+        LIQUID: groupItems("LIQUID").map(i => ({ name: i.name, amount: i.amount })),
+        INVESTMENTS: groupItems("INVESTMENTS").map(i => ({ name: i.name, amount: i.amount })),
+        RECEIVABLES: groupItems("RECEIVABLES").map(i => ({ name: i.name, amount: i.amount })),
+        LIABILITIES: groupItems("LIABILITIES").map(i => ({ name: i.name, amount: i.amount })),
+      };
+
       await savePortfolioSnapshot({
         user_id: user.uid,
         monthYear: currentMonthYear,
@@ -83,10 +84,11 @@ export default function PortfolioPage() {
         liabilities,
         items: snapshotItems
       }, encryptionKey);
+      
       toast.success("Portfolio snapshot saved for " + format(new Date(), "MMMM yyyy"));
-    } catch (err) {
-      toast.error("Failed to save snapshot");
-      console.error(err);
+    } catch (err: any) {
+      toast.error("Failed to save snapshot: " + (err.message || "Unknown error"));
+      console.error("Snapshot save error:", err);
     } finally {
       setSavingSnapshot(false);
     }
@@ -99,113 +101,111 @@ export default function PortfolioPage() {
 
   const handleAdd = (group?: PortfolioCategoryGroup) => {
     setEditingItem(null);
+    if (group) {
+      // Logic to handle auto-selecting group in modal if needed
+    }
     setIsModalOpen(true);
   };
 
   if (loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary shadow-glow-primary"></div>
-          <p className="text-on-surface-variant text-[10px] font-black uppercase tracking-[0.4em] animate-pulse opacity-60">Loading portfolio...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading loading={true} error={null} message="Loading portfolio..." />;
   }
 
   return (
     <>
-      <div className="flex flex-col space-y-10 max-w-7xl mx-auto selection:bg-primary/30">
+      <div className="flex flex-col space-y-10 w-full max-w-[1600px] mx-auto selection:bg-primary/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-32">
         
         <PageHeader 
           category="Portfolio"
           title="Asset Portfolio"
-          subtitle={<>Broad view of <span className="text-white/60">your accumulated wealth.</span></>}
+          subtitle={<>Broad view of <span className="text-white font-bold">your accumulated wealth.</span></>}
           actions={
-            <div className="flex flex-col gap-4">
-              <div className="glass-card px-6 md:px-8 py-4 md:py-5 flex items-center justify-between md:justify-start gap-6 md:gap-10 border-primary/20 bg-primary/[0.02] hover:bg-primary/[0.05] transition-all duration-500 overflow-hidden relative group">
-                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="flex flex-col gap-3 shrink-0">
+              {/* Integrated Net Worth & Status Card */}
+              <div className="glass-card px-8 py-5 flex items-center gap-10 border-white/10 bg-white/[0.02] shadow-2xl relative group/net overflow-hidden rounded-[2rem]">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/net:opacity-100 transition-opacity duration-1000" />
+                
                 <div className="flex flex-col">
-                  <span className="text-[8px] md:text-[10px] font-black text-primary/60 uppercase tracking-[0.4em] mb-1">Net Worth</span>
-                  <span className="text-2xl md:text-3xl font-black font-display text-white tracking-tighter tabular-nums drop-shadow-2xl">
+                  <span className="text-[10px] font-black text-primary/60 uppercase tracking-[0.4em] mb-2">Net Worth</span>
+                  <span className="text-3xl md:text-4xl font-black font-display text-white tracking-tighter tabular-nums drop-shadow-2xl">
                     {formatINR(netWorth)}
                   </span>
                 </div>
                 
-                {previousSnapshot && (
-                  <>
-                    <div className="h-8 w-px bg-white/10 hidden md:block" />
-                    <div className="flex flex-col">
-                      <span className="text-[8px] md:text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-1">MoM Growth</span>
-                      <div className={`flex items-center gap-1.5 font-black font-display text-base md:text-lg tracking-tight ${momChange >= 0 ? 'text-primary' : 'text-rose-500'}`}>
-                        {momChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                        {formatINR(Math.abs(momChange))}
-                        <span className="text-[10px] opacity-60 ml-1">({momPercent.toFixed(1)}%)</span>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="h-8 w-px bg-white/10 hidden md:block" />
-                <div className="flex flex-col items-end md:items-start">
-                  <span className="text-[8px] md:text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-1">Status</span>
-                  <span className="text-[9px] md:text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest flex items-center gap-2">
-                    <ShieldCheck className="h-3 w-3 text-primary/60" /> SECURE
+                <div className="h-12 w-[1px] bg-white/10" />
+                
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-2">Status</span>
+                  <span className="text-[10px] font-black text-white/60 uppercase tracking-widest flex items-center gap-2 group-hover/status:text-primary transition-colors">
+                    <ShieldCheck className="h-4 w-4 text-primary shadow-glow-primary" /> SECURE
                   </span>
                 </div>
               </div>
 
-              {!hasSnapshotThisMonth && items.length > 0 && (
-                <div className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-primary/10 bg-white/[0.01] animate-in slide-in-from-right duration-500">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Camera className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Snapshot Due</h4>
-                      <p className="text-[8px] font-medium text-white/40">Lock in your current values.</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={handleSaveSnapshot}
-                    disabled={savingSnapshot}
-                    className="w-full md:w-auto px-4 py-2 bg-primary text-background text-[9px] font-black uppercase tracking-[0.2em] rounded-lg hover:shadow-glow-primary transition-all disabled:opacity-50"
-                  >
-                    {savingSnapshot ? "Saving..." : "Log Now"}
-                  </button>
-                </div>
+              {/* Wide Action Button Below Card */}
+              <Link
+                href="/analytics?tab=growth"
+                className="flex items-center justify-center gap-3 px-8 py-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.07] hover:border-white/10 transition-all active:scale-[0.98] group shadow-xl"
+              >
+                <TrendingUp className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] group-hover:text-white transition-colors">
+                  View Growth Analytics
+                </span>
+              </Link>
+
+              {/* Simplified Snapshot Trigger if needed */}
+              {canTakeSnapshot && items.length > 0 && (
+                <button 
+                  onClick={handleSaveSnapshot}
+                  disabled={savingSnapshot}
+                  className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[9px] font-black uppercase tracking-[0.2em] hover:bg-primary/20 transition-all disabled:opacity-50 mt-1"
+                >
+                  <Camera className="h-3 w-3" />
+                  {savingSnapshot ? "Saving..." : "Log Snapshot"}
+                </button>
               )}
             </div>
           }
         />
 
         {/* 2x2 Portfolio Grid - Optimized for 100vh Desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 flex-1 content-start md:pb-32">
-          <PortfolioCategoryCard 
-            group="LIQUID" 
-            items={groupItems("LIQUID")} 
-            onEdit={handleEdit} 
-            onAdd={() => handleAdd("LIQUID")} 
-          />
-          <PortfolioCategoryCard 
-            group="INVESTMENTS" 
-            items={groupItems("INVESTMENTS")} 
-            onEdit={handleEdit} 
-            onAdd={() => handleAdd("INVESTMENTS")} 
-          />
-          <PortfolioCategoryCard 
-            group="RECEIVABLES" 
-            items={groupItems("RECEIVABLES")} 
-            onEdit={handleEdit} 
-            onAdd={() => handleAdd("RECEIVABLES")} 
-          />
-          <PortfolioCategoryCard 
-            group="LIABILITIES" 
-            items={groupItems("LIABILITIES")} 
-            onEdit={handleEdit} 
-            onAdd={() => handleAdd("LIABILITIES")} 
-          />
-        </div>
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 flex-1 content-start md:pb-32"
+        >
+          {([
+            { group: "LIQUID", items: groupItems("LIQUID") },
+            { group: "INVESTMENTS", items: groupItems("INVESTMENTS") },
+            { group: "RECEIVABLES", items: groupItems("RECEIVABLES") },
+            { group: "LIABILITIES", items: groupItems("LIABILITIES") },
+          ] as const).map((block) => (
+            <motion.div
+              key={block.group}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+            >
+              <PortfolioCategoryCard 
+                group={block.group} 
+                items={block.items} 
+                totalAssets={liquid + investments + receivables}
+                onEdit={handleEdit} 
+                onAdd={() => handleAdd(block.group)} 
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
 
       <AddPortfolioItemModal 

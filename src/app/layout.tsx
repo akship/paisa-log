@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth";
 import EncryptionGate from "@/components/auth/EncryptionGate";
 import { Toaster } from "react-hot-toast";
+import MouseTracker from "@/components/ui/MouseTracker";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,14 +19,14 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://paisa-log.web.app"),
+  metadataBase: new URL("https://pl-app.web.app"),
   title: "Paisa.log",
   description: "A premium personal finance tracker.",
   manifest: "/manifest.json",
   openGraph: {
     title: "Paisa.log",
     description: "A premium personal finance tracker.",
-    url: "https://paisa-log.web.app",
+    url: "https://pl-app.web.app",
     siteName: "Paisa.log",
     images: [
       {
@@ -73,6 +74,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col font-sans" suppressHydrationWarning>
         <AuthProvider>
+          <MouseTracker />
           <EncryptionGate>
             {children}
           </EncryptionGate>

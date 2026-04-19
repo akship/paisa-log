@@ -38,7 +38,11 @@
         },
         {
           "fieldPath": "monthYear",
-          "order": "DESCENDING"
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
         }
       ]
     }

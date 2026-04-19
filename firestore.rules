@@ -38,16 +38,27 @@ service cloud.firestore {
     // Allow users to access their own transactions
     match /transactions/{transactionId} {
       allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
-      allow create: if request.auth != null && preservesOwnership() && isValidTransaction();
-      allow update: if isOwner(resource.data) && preservesOwnership() && isValidTransaction();
+      allow create: if request.auth != null 
+                    && preservesOwnership() 
+                    && isValidTransaction()
+                    && request.resource.data.timestamp is timestamp;
+      allow update: if isOwner(resource.data) 
+                    && preservesOwnership() 
+                    && isValidTransaction()
+                    && request.resource.data.user_id == resource.data.user_id;
       allow delete: if isOwner(resource.data);
     }
     
     // Allow users to access their own portfolio assets/liabilities
     match /portfolio/{portfolioId} {
       allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
-      allow create: if request.auth != null && preservesOwnership() && isValidPortfolioItem();
-      allow update: if isOwner(resource.data) && preservesOwnership() && isValidPortfolioItem();
+      allow create: if request.auth != null 
+                    && preservesOwnership() 
+                    && isValidPortfolioItem();
+      allow update: if isOwner(resource.data) 
+                    && preservesOwnership() 
+                    && isValidPortfolioItem()
+                    && request.resource.data.user_id == resource.data.user_id;
       allow delete: if isOwner(resource.data);
     }
 

@@ -22,7 +22,7 @@ export default function GrowthChart({ data }: GrowthChartProps) {
   // Sort data by timestamp and filter out un-decryptable snapshots
   const sortedData = [...data]
     .filter(s => s.totalNetWorth !== -1)
-    .sort((a, b) => a.timestamp - b.timestamp);
+    .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
 
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -45,19 +45,19 @@ export default function GrowthChart({ data }: GrowthChartProps) {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
                 <p className="text-[8px] text-white/20 font-black uppercase tracking-widest">Liquid</p>
-                <p className="text-[11px] text-white/60 font-bold">{formatINR(entry.liquid)}</p>
+                <p className="text-[11px] text-white/60 font-bold">{formatINR(entry.liquid || 0)}</p>
               </div>
               <div>
                 <p className="text-[8px] text-white/20 font-black uppercase tracking-widest">Investments</p>
-                <p className="text-[11px] text-white/60 font-bold">{formatINR(entry.investments)}</p>
+                <p className="text-[11px] text-white/60 font-bold">{formatINR(entry.investments || 0)}</p>
               </div>
               <div>
                 <p className="text-[8px] text-white/20 font-black uppercase tracking-widest">Receivables</p>
-                <p className="text-[11px] text-green-400/60 font-bold">+{formatINR(entry.receivables)}</p>
+                <p className="text-[11px] text-green-400/60 font-bold">+{formatINR(entry.receivables || 0)}</p>
               </div>
               <div>
                 <p className="text-[8px] text-white/20 font-black uppercase tracking-widest">Liabilities</p>
-                <p className="text-[11px] text-rose-400/60 font-bold">-{formatINR(entry.liabilities)}</p>
+                <p className="text-[11px] text-rose-400/60 font-bold">-{formatINR(entry.liabilities || 0)}</p>
               </div>
             </div>
           </div>
