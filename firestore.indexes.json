@@ -9,7 +9,30 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "displayName",
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "portfolio_history",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "monthYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
           "order": "ASCENDING"
         },
         {
@@ -20,12 +43,16 @@
       "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "portfolio",
+      "collectionGroup": "portfolio_history",
       "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "user_id",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "monthYear",
+          "order": "DESCENDING"
         },
         {
           "fieldPath": "timestamp",
@@ -63,8 +90,6 @@
       "fields": [
         {
           "fieldPath": "user_id",
-          "order": "ASCENDING"
-"user_id",
           "order": "ASCENDING"
         },
         {

@@ -87,17 +87,21 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
       const uniqueDescriptions = new Set<string>();
       const sugg: { desc: string, cat: string }[] = [];
       
-      for (const tx of transactions) {
+      // Filter transactions by current type for domain-specific suggestions
+      const relevantTransactions = transactions.filter(t => t.type === type);
+      
+      for (const tx of relevantTransactions) {
         if (!tx.description || tx.description === "[Locked Data]") continue;
-        if (!uniqueDescriptions.has(tx.description)) {
-          uniqueDescriptions.add(tx.description);
+        const normalizedDesc = tx.description.trim().toLowerCase();
+        if (!uniqueDescriptions.has(normalizedDesc)) {
+          uniqueDescriptions.add(normalizedDesc);
           sugg.push({ desc: tx.description, cat: tx.category });
         }
         if (sugg.length >= 200) break; // Limit
       }
       setSuggestions(sugg);
     }
-  }, [isOpen, transactions]);
+  }, [isOpen, transactions, type]);
 
   if (!isOpen || !mounted) return null;
 
@@ -259,10 +263,11 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => {
+                        onMouseDown={(e) => {
+                          // Prevent input blur before this click finishes
+                          e.preventDefault();
                           setDescription(s.desc);
                           setCategory(s.cat);
-                          setType(transactions.find(t => t.description === s.desc)?.type || type);
                           setShowSuggestions(false);
                         }}
                         className="w-full text-left px-5 py-4 text-[10px] font-bold text-on-surface-variant hover:text-white hover:bg-primary/10 transition-all border-b border-white/5 last:border-0 uppercase tracking-widest flex items-center justify-between"
