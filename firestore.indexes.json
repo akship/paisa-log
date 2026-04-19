@@ -1,7 +1,7 @@
 {
   "indexes": [
     {
-      "collectionGroup": "transactions",
+      "collectionGroup": "portfolio",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -9,10 +9,15 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
+          "fieldPath": "displayName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "portfolio",
@@ -25,11 +30,16 @@
         {
           "fieldPath": "timestamp",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "portfolio_history",
+      "collectionGroup": "transactions",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -37,14 +47,36 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "monthYear",
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "transactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+"user_id",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "timestamp",
-          "order": "ASCENDING"
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     }
   ],
   "fieldOverrides": []
