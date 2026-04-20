@@ -1,10 +1,12 @@
 "use client";
+import { useState, useEffect } from "react";
 
 import { TrendingUp, ArrowRight, IndianRupee, PieChart as PieChartIcon, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatINR } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { PRISM_COLORS } from "@/lib/constants";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface SavingsPoolCardProps {
   savingsTotal: number;
@@ -56,7 +58,13 @@ interface TotalSpendsCardProps {
 }
 
 export function TotalSpendsCard({ activeCategoryId, expenseTotal, expensesByCategory, onSelect }: TotalSpendsCardProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const isSelected = activeCategoryId === 'total';
+  const isXl = useMediaQuery("(min-width: 1280px)");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   return (
     <motion.div 
@@ -87,7 +95,7 @@ export function TotalSpendsCard({ activeCategoryId, expenseTotal, expensesByCate
         </div>
       </div>
 
-      {isSelected && (
+      {isSelected && !isXl && isMounted && (
         <div className="xl:hidden px-8 pb-8 animate-in slide-in-from-top-4 duration-500">
           <div className="h-px bg-white/5 mb-8" />
           <div className="h-[280px] w-full relative">
@@ -97,7 +105,7 @@ export function TotalSpendsCard({ activeCategoryId, expenseTotal, expensesByCate
                 <p className="text-xl font-black font-display text-white">{formatINR(expenseTotal)}</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={200}>
               <PieChart>
                 <Pie
                   data={Object.entries(expensesByCategory).map(([name, value], idx) => ({ name, value, color: PRISM_COLORS[idx % PRISM_COLORS.length] }))}

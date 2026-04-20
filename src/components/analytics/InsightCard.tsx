@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatINR } from "@/lib/utils";
 import { Transaction } from "@/lib/firebase/firestore";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
@@ -38,6 +39,7 @@ export default function InsightCard({
   chartData = []
 }: InsightCardProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const isXl = useMediaQuery("(min-width: 1280px)");
 
   useEffect(() => {
     setIsMounted(true);
@@ -69,15 +71,15 @@ export default function InsightCard({
            <div className="h-px bg-white/5 mb-5" />
            
            {/* Mobile View Pie Chart */}
-           {chartData && chartData.length > 0 && isMounted && (
-             <div className="xl:hidden h-[280px] w-full mb-8 relative min-w-0 min-h-0">
+           {chartData && chartData.length > 0 && isMounted && !isXl && (
+             <div className="xl:hidden h-[280px] w-full mb-8 relative">
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
                     <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Focused</p>
                     <p className="text-xl font-bold md:font-black font-display text-white">{formatINR(total)}</p>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={280} minWidth={0}>
                   <PieChart>
                     <Pie
                       data={chartData}

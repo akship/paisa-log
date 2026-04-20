@@ -27,8 +27,14 @@ export default function SummaryGrid() {
         >
           <Link href="/analytics" className="group/card block">
             <motion.div 
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
+              variants={{
+                initial: { scale: 1, y: 0 },
+                hover: { scale: 1.02, y: -2 },
+                tap: { scale: 0.98 }
+              }}
               className="glass-card glass-interactive p-2.5 md:p-4 h-[90px] md:h-[150px] flex flex-col relative overflow-hidden border-secondary/10 group-hover/card:border-secondary/30 transition-colors duration-500"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
@@ -37,8 +43,10 @@ export default function SummaryGrid() {
               </div>
               <motion.div 
                 className="absolute right-[10%] bottom-[8%] pointer-events-none"
-                initial={{ opacity: 0.03, scale: 1, rotate: 0 }}
-                whileHover={{ opacity: 0.08, scale: 1.25, rotate: 15 }}
+                variants={{
+                  initial: { opacity: 0.03, scale: 1, rotate: 0 },
+                  hover: { opacity: 0.08, scale: 1.25, rotate: 15 }
+                }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
               >
                 <IndianRupee className="h-24 w-24 text-secondary" />
@@ -69,8 +77,14 @@ export default function SummaryGrid() {
         >
           <Link href="/analytics" className="group/card block">
             <motion.div 
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
+              variants={{
+                initial: { scale: 1, y: 0 },
+                hover: { scale: 1.02, y: -2 },
+                tap: { scale: 0.98 }
+              }}
               className="glass-card glass-interactive p-2.5 md:p-4 h-[90px] md:h-[150px] flex flex-col relative overflow-hidden border-tertiary/10 group-hover/card:border-tertiary/30 transition-colors duration-500"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-tertiary/5 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
@@ -79,8 +93,10 @@ export default function SummaryGrid() {
               </div>
               <motion.div 
                 className="absolute right-[10%] bottom-[8%] pointer-events-none"
-                initial={{ opacity: 0.03, scale: 1, rotate: 0 }}
-                whileHover={{ opacity: 0.08, scale: 1.25, rotate: -15 }}
+                variants={{
+                  initial: { opacity: 0.03, scale: 1, rotate: 0 },
+                  hover: { opacity: 0.08, scale: 1.25, rotate: -15 }
+                }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
               >
                 <IndianRupee className="h-24 w-24 text-tertiary" />

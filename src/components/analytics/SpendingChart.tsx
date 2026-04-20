@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { formatINR } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface ChartEntry {
   name: string;
@@ -80,6 +81,7 @@ export const CustomTooltip = ({ active, payload, total }: any) => {
 export default function SpendingChart({ title, chartData, expenseTotal, hasSavings }: SpendingChartProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const isXl = useMediaQuery("(min-width: 1280px)");
 
   useEffect(() => {
     setIsMounted(true);
@@ -120,7 +122,7 @@ export default function SpendingChart({ title, chartData, expenseTotal, hasSavin
     );
   };
 
-  if (!isMounted) {
+  if (!isMounted || !isXl) {
     return <div className="hidden xl:flex xl:col-span-7 glass-card rounded-[3rem] border-white/5 p-8 md:p-12 min-h-[500px] md:min-h-[600px]" />;
   }
 
@@ -134,10 +136,11 @@ export default function SpendingChart({ title, chartData, expenseTotal, hasSavin
         </div>
       </div>
 
-      <div className="w-full flex-1 min-w-0 min-h-0" style={{ height: 460 }}>
-        <ResponsiveContainer width="100%" height={460}>
-          <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
-            <Tooltip content={<CustomTooltip total={expenseTotal} />} cursor={false} />
+      <div className="w-full h-[460px] relative mt-4">
+        {isXl && (
+          <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={400} minWidth={0}>
+            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <Tooltip content={<CustomTooltip total={expenseTotal} />} cursor={false} />
             <Pie
               data={chartData}
               dataKey="value"
@@ -174,6 +177,7 @@ export default function SpendingChart({ title, chartData, expenseTotal, hasSavin
             </Pie>
           </PieChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
