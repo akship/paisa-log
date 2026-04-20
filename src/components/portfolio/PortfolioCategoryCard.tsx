@@ -33,9 +33,9 @@ export default function PortfolioCategoryCard({ group, items, totalAssets, onEdi
 
   return (
     <div className="flex flex-col rounded-[2.5rem] overflow-hidden glass-card glass-interactive transition-all duration-700 bg-white/[0.01]">
-      <div className="flex items-center justify-between p-6 md:p-8 border-b border-white/[0.03] bg-white/[0.01]">
+      <div className="flex items-center justify-between p-4 md:p-8 border-b border-white/[0.03] bg-white/[0.01]">
         <div className="flex items-center gap-5 md:gap-7">
-          <div className={`p-4 md:p-5 rounded-3xl ${config.bg} ${config.color} border border-white/5 transition-all duration-700`}>
+          <div className={`p-3 md:p-5 rounded-3xl ${config.bg} ${config.color} border border-white/5 transition-all duration-700`}>
             <config.icon className="h-6 w-6 md:h-7 md:w-7" />
           </div>
           <div>
@@ -54,7 +54,7 @@ export default function PortfolioCategoryCard({ group, items, totalAssets, onEdi
         </div>
       </div>
 
-      <div className="p-5 space-y-3 no-scrollbar">
+      <div className="p-3 md:p-5 space-y-3 no-scrollbar">
         {items.length === 0 ? (
           <div className="py-16 text-center flex flex-col items-center opacity-40">
             <div className={`h-10 w-10 border-2 border-dashed rounded-2xl mb-4 transition-all duration-700 group-hover/card:rotate-45 ${group === 'LIABILITIES' ? 'border-tertiary/30' : 'border-primary/30'}`} />
@@ -70,7 +70,7 @@ export default function PortfolioCategoryCard({ group, items, totalAssets, onEdi
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05, duration: 0.5, ease: "easeOut" }}
                   key={item.id} 
-                  className={`group flex items-center justify-between p-4.5 rounded-[1.5rem] glass-interactive border border-transparent hover:border-white/5 ${isLocked ? 'bg-rose-500/5' : 'bg-white/[0.02]'}`}
+                  className={`group flex items-center justify-between p-2.5 md:p-4.5 rounded-[1.5rem] glass-interactive border border-transparent hover:border-white/5 ${isLocked ? 'bg-rose-500/5' : 'bg-white/[0.02]'}`}
                 >
                   <div className="flex flex-col min-w-0">
                     <span className={`text-sm font-bold tracking-tight truncate transition-colors ${isLocked ? 'text-rose-500' : 'text-on-surface group-hover:text-white'}`}>

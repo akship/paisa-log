@@ -159,7 +159,7 @@ export default function SettingsPage() {
              <button 
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center whitespace-nowrap gap-2.5 px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all ${
+                className={`flex items-center whitespace-nowrap gap-2.5 px-4 md:px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all ${
                   activeTab === tab.id 
                     ? "bg-primary/20 text-primary border border-primary/30 shadow-glow-primary" 
                     : "text-on-surface-variant/50 bg-white/[0.03] border border-white/5"
@@ -175,7 +175,7 @@ export default function SettingsPage() {
           
           {activeTab === "profile" && (
             <div className="animate-in slide-in-from-bottom-4 fade-in duration-700">
-              <section className="glass-card rounded-[2rem] p-6 md:p-10 space-y-8 bg-white/[0.01]">
+              <section className="glass-card rounded-[2rem] p-5 md:p-10 space-y-8 bg-white/[0.01]">
                 <SectionHeader 
                   title="Identity Matrix" 
                   icon={<User className="h-4 w-4" />}
@@ -208,7 +208,7 @@ export default function SettingsPage() {
           {activeTab === "categories" && (
             <div className="space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-700">
               {/* Outflow Categories */}
-              <section className="glass-card rounded-[1.5rem] p-6 md:p-8 space-y-6 bg-white/[0.01]">
+              <section className="glass-card rounded-[1.5rem] p-5 md:p-8 space-y-6 bg-white/[0.01]">
                 <SectionHeader 
                   title="Outflow Categories" 
                   icon={<ArrowUpRight className="h-4 w-4" />}
@@ -250,7 +250,7 @@ export default function SettingsPage() {
               </section>
 
               {/* Inflow Categories */}
-              <section className="glass-card rounded-[1.5rem] p-6 md:p-8 space-y-6 bg-white/[0.01]">
+              <section className="glass-card rounded-[1.5rem] p-5 md:p-8 space-y-6 bg-white/[0.01]">
                 <SectionHeader 
                   title="Inflow Categories" 
                   icon={<ArrowDownRight className="h-4 w-4" />}
@@ -295,7 +295,7 @@ export default function SettingsPage() {
 
           {activeTab === "security" && (
             <div className="animate-in slide-in-from-bottom-4 fade-in duration-700">
-              <section className="glass-card rounded-[2rem] p-6 md:p-10 space-y-8 bg-white/[0.01]">
+              <section className="glass-card rounded-[2rem] p-5 md:p-10 space-y-8 bg-white/[0.01]">
                 <SectionHeader 
                   title="Security Vault" 
                   icon={<Key className="h-4 w-4" />}

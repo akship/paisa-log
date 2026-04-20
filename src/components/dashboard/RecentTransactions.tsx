@@ -47,7 +47,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
   };
 
   return (
-    <div className="flex flex-col space-y-6">
+    <div className="flex flex-col space-y-4">
       <SectionHeader
         title="Recent Records"
         actions={
@@ -150,9 +150,9 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
         }
       />
 
-      <div className="space-y-10 selection:bg-primary/30">
+      <div className="space-y-3 selection:bg-primary/30">
         {filteredTransactions.length === 0 ? (
-          <div className="p-20 text-center flex flex-col items-center glass-card border-white/5 bg-white/[0.01] relative overflow-hidden group">
+          <div className="p-12 md:p-20 text-center flex flex-col items-center glass-card border-white/5 bg-white/[0.01] relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50"></div>
             
             <div className="relative mb-10">
@@ -205,41 +205,46 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                   animate="visible"
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="group relative flex items-center justify-between p-5 glass-card glass-interactive border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500 overflow-hidden"
+                  className="group relative flex items-center justify-between px-4 py-3 md:p-3.5 glass-card glass-interactive border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500 overflow-hidden"
                 >
                   <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1.5 rounded-r-full transition-all duration-700 group-hover:h-full group-hover:w-2 ${tx.type === 'income' ? 'bg-secondary shadow-glow-secondary' : 'bg-primary shadow-glow-primary'}`}></div>
 
-                  <div className="flex items-center gap-6 min-w-0 relative z-10">
+                  <div className="flex items-center gap-4 md:gap-6 min-w-0 relative z-10">
                     <div className="hidden sm:flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-white/5 border border-white/5 group-hover:border-primary/20 group-hover:bg-primary/5 transition-all duration-700">
-                      <IndianRupee className={`h-6 w-6 transition-all duration-700 ${tx.type === 'income' ? 'text-secondary' : 'text-on-surface-variant opacity-40 group-hover:text-primary group-hover:opacity-100 group-hover:scale-110'}`} />
+                      <IndianRupee className={`h-6 w-6 transition-all duration-700 ${tx.type === 'income' ? 'text-secondary group-hover:rotate-[15deg]' : 'text-on-surface-variant opacity-40 group-hover:text-primary group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-[-12deg]'}`} />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="font-bold text-on-surface truncate text-lg tracking-tight group-hover:text-white transition-colors duration-500">{tx.description || tx.category}</span>
-                      <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity duration-500">
-                        <span className={tx.type === 'income' ? 'text-secondary' : 'text-primary'}>{tx.category}</span>
-                        <span className="opacity-20">•</span>
-                        <span>{format(tx.timestamp, "MMM dd, yyyy")}</span>
+                      <span className="text-base md:text-lg font-semibold md:font-bold text-on-surface truncate tracking-tight group-hover:text-white transition-colors duration-500">
+                        {tx.description || tx.category}
+                      </span>
+                      <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs font-bold md:font-black uppercase tracking-widest transition-opacity duration-500">
+                        <span className={tx.type === 'income' ? 'text-secondary/80' : 'text-primary/70'}>{tx.category}</span>
+                        <span className="text-white/10 text-[8px]">•</span>
+                        <span className="text-white/30">{format(tx.timestamp, "MMM dd, yyyy")}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1 relative z-10">
-                    <span className={`text-xl md:text-3xl font-black tracking-tighter font-display whitespace-nowrap text-right drop-shadow-2xl transition-all duration-700 group-hover:scale-105 ${tx.type === 'income' ? 'text-secondary' : 'text-on-surface'}`}>
-                      <span className={`opacity-20 font-bold mr-1 text-sm md:text-xl translate-y-[-2px] inline-block`}>{tx.type === 'income' ? '+' : '-'}</span>
-                      {formatINR(tx.amount).replace('₹', '')}
-                    </span>
-                    <div className="flex items-center gap-2 mt-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-4 sm:group-hover:translate-x-0">
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className={`text-lg md:text-2xl font-bold md:font-black tracking-tighter font-display whitespace-nowrap text-right drop-shadow-2xl transition-all duration-700 group-hover:scale-105 ${tx.type === 'income' ? 'text-secondary' : 'text-on-surface'}`}>
+                        <span className={`opacity-20 font-semibold md:font-bold mr-1 text-sm md:text-lg translate-y-[-2px] inline-block`}>{tx.type === 'income' ? '+' : '-'}</span>
+                        {formatINR(tx.amount).replace('₹', '')}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-4 sm:group-hover:translate-x-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
-                        className="p-2 rounded-xl bg-white/5 text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                        className="p-2 rounded-xl bg-white/[0.03] text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
-                        className="p-2 rounded-xl bg-white/5 text-on-surface-variant hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 transition-all border border-white/5"
+                        className="p-2 rounded-xl bg-white/[0.03] text-on-surface-variant hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 transition-all border border-white/5 active:scale-90"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>

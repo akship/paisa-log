@@ -24,7 +24,7 @@ export default function PageHeader({
   }[animationVariant];
 
   return (
-    <div className={`flex flex-col xl:flex-row xl:items-start justify-between gap-8 mb-12 animate-in ${animationClass} duration-700`}>
+    <div className={`flex flex-col xl:flex-row xl:items-start justify-between gap-6 xl:gap-8 mb-3 md:mb-6 animate-in ${animationClass} duration-700`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2.5 mb-2 group/cat">
           <div className="h-[2px] w-7 bg-primary rounded-full group-hover/cat:w-10 transition-all duration-300" />
@@ -32,7 +32,7 @@ export default function PageHeader({
             {category}
           </span>
         </div>
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black font-display text-white tracking-tighter leading-none mb-4">
+        <h1 className="text-3xl md:text-5xl lg:text-6xl font-black font-display text-white tracking-tighter leading-none mb-3 md:mb-4">
           {title}
         </h1>
         <div className="text-white/40 text-sm md:text-lg font-medium font-display tracking-tight max-w-2xl">

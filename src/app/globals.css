@@ -270,7 +270,23 @@
     @apply !border-white/20 !border-t-[2px] !border-r-[2px] !w-1.5 !h-1.5;
   }
 
+  .themed-datepicker {
+    @apply !z-[10000];
+  }
+
   .themed-datepicker .react-datepicker__triangle {
     @apply !hidden;
+  }
+  
+  .themed-datepicker .react-datepicker__header__dropdown {
+    @apply !flex !justify-center !gap-2 !mb-4;
+  }
+  
+  .themed-datepicker .react-datepicker__month-select,
+  .themed-datepicker .react-datepicker__year-select {
+    @apply !bg-[#1a1f2e] !border !border-white/10 !rounded-lg !px-2 !py-1 !text-[10px] !font-black !text-white !uppercase !tracking-widest !cursor-pointer focus:!outline-none focus:!border-primary/50;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
   }
 }

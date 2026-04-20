@@ -76,7 +76,7 @@ export default function SpendingView({
 
   if (filteredTransactions.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-20 glass-card rounded-[3rem] border-white/5">
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-10 md:p-20 glass-card rounded-[3rem] border-white/5">
         <Activity className="h-16 w-16 text-white/5 mb-8" />
         <h3 className="text-3xl font-black text-white/50 tracking-tight font-display mb-2">No data found</h3>
         <p className="text-white/20 text-lg font-medium max-w-sm">No transactions recorded for this period.</p>

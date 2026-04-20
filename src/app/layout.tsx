@@ -95,6 +95,7 @@ export default function RootLayout({
             }}
           />
         </AuthProvider>
+        <div id="datepicker-portal" className="relative z-[99999]" />
       </body>
     </html>
   );

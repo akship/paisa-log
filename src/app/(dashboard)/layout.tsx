@@ -12,7 +12,6 @@ import {
   Plus,
   Briefcase
 } from "lucide-react";
-import NotificationBell from "@/components/layout/NotificationBell";
 import { DataProvider } from "@/lib/DataContext";
 import { PortfolioProvider } from "@/lib/PortfolioContext";
 
@@ -99,39 +98,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 flex flex-col relative min-w-0 overflow-y-auto no-scrollbar pb-32 md:pb-0 z-0">
 
           {/* Top-Right Profile Container (Desktop Only) */}
-          <div className="hidden md:flex absolute top-10 right-10 z-50 items-center gap-5">
-            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 shadow-xl hover:bg-white/[0.05] transition-colors cursor-pointer group">
-              <NotificationBell />
-            </div>
-            <Link href="/settings" className="flex items-center hover:scale-[1.02] transition-all active:scale-95 group/profile">
-              <div className="flex items-center gap-4 px-6 py-2.5 rounded-[2rem] glass-card backdrop-blur-2xl border-white/10 bg-white/[0.02] shadow-2xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent opacity-0 group-hover/profile:opacity-100 transition-opacity duration-1000" />
-                
-                <div className="flex flex-col items-end min-w-0 relative z-10">
-                  <span className="text-sm font-black truncate text-white tracking-tight">{displayName}</span>
-                  <span className="text-[8px] uppercase tracking-[0.2em] text-white/30 font-black">Profile</span>
-                </div>
+          {/* Top-Right Profile Header Area (Desktop Only) */}
+          <div className="hidden md:flex items-center justify-end px-12 lg:px-16 pt-10 pb-2 z-50">
+            <div className="flex items-center gap-5">
 
-                <div className="relative group/avatar flex-shrink-0">
-                  <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-md opacity-0 group-hover/profile:opacity-100 transition-opacity duration-700" />
-                  <img 
-                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`} 
-                    alt="User" 
-                    className="h-11 w-11 rounded-2xl ring-1 ring-white/10 object-cover relative z-20 shadow-2xl grayscale-[0.2] transition-all duration-700 group-hover/profile:grayscale-0 group-hover/profile:scale-105" 
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = `https://ui-avatars.com/api/?name=U&background=6366f1&color=fff`;
-                    }}
-                  />
-                  {/* Online Indicator */}
-                  <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-secondary border-[3px] border-[#0a0e1a] z-30 shadow-glow-secondary shadow-black/50" />
+              <Link href="/settings" className="flex items-center hover:scale-[1.02] transition-all active:scale-95 group/profile">
+                <div className="flex items-center gap-4 px-6 py-2.5 rounded-[2rem] glass-card backdrop-blur-2xl border-white/10 bg-white/[0.02] shadow-2xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent opacity-0 group-hover/profile:opacity-100 transition-opacity duration-1000" />
+                  
+                  <div className="flex flex-col items-end min-w-0 relative z-10">
+                    <span className="text-sm font-black truncate text-white tracking-tight">{displayName}</span>
+                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/30 font-black">Profile</span>
+                  </div>
+
+                  <div className="relative group/avatar flex-shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-md opacity-0 group-hover/profile:opacity-100 transition-opacity duration-700" />
+                    <img 
+                      src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`} 
+                      alt="User" 
+                      className="h-11 w-11 rounded-2xl ring-1 ring-white/10 object-cover relative z-20 shadow-2xl grayscale-[0.2] transition-all duration-700 group-hover/profile:grayscale-0 group-hover/profile:scale-105" 
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=U&background=6366f1&color=fff`;
+                      }}
+                    />
+                    {/* Online Indicator */}
+                    <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-secondary border-[3px] border-[#0a0e1a] z-30 shadow-glow-secondary shadow-black/50" />
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Header */}
-          <header className="flex h-24 shrink-0 items-center justify-between glass px-8 md:hidden sticky top-0 z-40 border-b border-white/5">
+          <header className="flex h-24 shrink-0 items-center justify-between glass px-6 md:hidden sticky top-0 z-40 border-b border-white/5">
             <Link href="/" className="flex items-center gap-4">
               <div className="p-1 rounded-xl bg-white/5 border border-white/10 shadow-glow-primary overflow-hidden">
                 <Image src="/logo.png" alt="Paisa.Log" width={32} height={32} className="object-cover" priority unoptimized />
@@ -139,7 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-xl font-black font-display tracking-tight text-shadow-glow">Paisa<span className="text-primary font-serif italic">.Log</span></span>
             </Link>
             <div className="flex items-center gap-4">
-              <NotificationBell />
+
               <Link href="/settings" className="relative hover:scale-110 transition-transform active:scale-90 group/avatar">
                 <img 
                   src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`} 
@@ -156,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </header>
 
           {/* Dynamic Page Content */}
-          <div className="flex-1 px-6 pt-24 md:px-12 md:pt-28 lg:px-16 lg:pt-32 animate-in fade-in slide-in-from-bottom-2 duration-1000">
+          <div className="flex-1 px-4 pt-4 md:px-12 md:pt-2 lg:px-16 lg:pt-2 animate-in fade-in slide-in-from-bottom-2 duration-1000">
             {children}
           </div>
         </main>

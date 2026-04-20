@@ -166,9 +166,6 @@ export default function AnalyticsPage() {
         onClose={() => setEditingTx(null)} 
         initialData={editingTx}
       />
-
-      {/* Datepicker Portal mount point */}
-      <div id="datepicker-portal" className="relative z-[9999]" />
     </div>
   );
 }

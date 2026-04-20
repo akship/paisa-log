@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { 
   AreaChart, 
   Area, 
@@ -67,6 +68,12 @@ export default function GrowthChart({ data }: GrowthChartProps) {
     return null;
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   if (sortedData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
@@ -83,8 +90,12 @@ export default function GrowthChart({ data }: GrowthChartProps) {
     );
   }
 
+  if (!isMounted) {
+    return <div className="w-full h-[400px] md:h-[500px] mt-8" />;
+  }
+
   return (
-    <div className="w-full h-[400px] md:h-[500px] mt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="w-full h-[400px] md:h-[500px] mt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 min-w-0 min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={sortedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>

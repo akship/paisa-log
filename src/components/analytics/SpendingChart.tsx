@@ -2,7 +2,7 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { formatINR } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ChartEntry {
   name: string;
@@ -78,7 +78,12 @@ export const CustomTooltip = ({ active, payload, total }: any) => {
 };
 
 export default function SpendingChart({ title, chartData, expenseTotal, hasSavings }: SpendingChartProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
@@ -115,9 +120,12 @@ export default function SpendingChart({ title, chartData, expenseTotal, hasSavin
     );
   };
 
+  if (!isMounted) {
+    return <div className="hidden xl:flex xl:col-span-7 glass-card rounded-[3rem] border-white/5 p-8 md:p-12 min-h-[500px] md:min-h-[600px]" />;
+  }
 
   return (
-    <div className="hidden xl:flex xl:col-span-7 glass-card rounded-[3rem] border-white/5 p-8 md:p-12 relative flex-col min-h-[500px] md:min-h-[600px] animate-in fade-in duration-1000">
+    <div className="hidden xl:flex xl:col-span-7 glass-card rounded-[3rem] border-white/5 p-8 md:p-12 relative flex-col min-h-[500px] md:min-h-[600px] animate-in fade-in duration-1000 overflow-hidden">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">{title}</h2>
         <div className="flex items-center gap-2">
@@ -126,7 +134,7 @@ export default function SpendingChart({ title, chartData, expenseTotal, hasSavin
         </div>
       </div>
 
-      <div className="w-full" style={{ height: 460 }}>
+      <div className="w-full flex-1 min-w-0 min-h-0" style={{ height: 460 }}>
         <ResponsiveContainer width="100%" height={460}>
           <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
             <Tooltip content={<CustomTooltip total={expenseTotal} />} cursor={false} />

@@ -26,6 +26,10 @@ export interface SubscriptionOptions {
   startDate?: Date;
 }
 
+// Cache for decrypted transactions to avoid redundant processing
+const decryptionCache = new Map<string, Transaction>();
+let lastActiveKey: CryptoKey | null = null;
+
 export const subscribeToTransactions = (
   userId: string, 
   callback: (transactions: Transaction[]) => void,
@@ -42,9 +46,6 @@ export const subscribeToTransactions = (
     constraints.push(where("timestamp", ">=", Timestamp.fromDate(options.startDate)));
   }
 
-  // Note: Firestore doesn't allow combining inequality on one field with limit easily 
-  // if we want "at least X records" across different ranges.
-  // For now, if limit exists, apply it.
   if (options?.limitCount) {
     constraints.push(limit(options.limitCount));
   }
@@ -55,10 +56,24 @@ export const subscribeToTransactions = (
   );
 
   return onSnapshot(q, async (snapshot) => {
-    const transactionPromises = snapshot.docs.map(async (doc) => {
-      const data = doc.data();
+    // If key changes, flush the global cache
+    if (encryptionKey !== lastActiveKey) {
+      decryptionCache.clear();
+      lastActiveKey = encryptionKey;
+    }
+
+    // Process only changes (added/modified) to optimize decryption
+    const work = snapshot.docChanges().map(async (change) => {
+      const docId = change.doc.id;
+      
+      if (change.type === "removed") {
+        decryptionCache.delete(docId);
+        return;
+      }
+
+      const data = change.doc.data();
       const tx: Transaction = {
-        id: doc.id,
+        id: docId,
         user_id: data.user_id,
         type: data.type,
         amount: data.amount,
@@ -70,10 +85,6 @@ export const subscribeToTransactions = (
       };
 
       if (tx.isEncrypted) {
-        tx.description = "[Locked Data]";
-        tx.category = "Unknown";
-        tx.amount = 0;
-
         if (encryptionKey) {
           try {
             const [desc, cat, amt] = await Promise.all([
@@ -85,15 +96,25 @@ export const subscribeToTransactions = (
             tx.category = cat;
             tx.amount = amt;
           } catch (err) {
-            console.warn("Failed to decrypt transaction:", tx.id);
             tx.decryptionFailed = true;
           }
+        } else {
+          tx.description = "[Locked Data]";
+          tx.category = "Unknown";
+          tx.amount = 0;
         }
       }
-      return tx;
+
+      decryptionCache.set(docId, tx);
     });
 
-    const transactions = await Promise.all(transactionPromises);
+    await Promise.all(work);
+
+    // Map back using current snapshot docs to maintain order and current filter
+    const transactions = snapshot.docs
+      .map(doc => decryptionCache.get(doc.id))
+      .filter((t): t is Transaction => !!t);
+
     callback(transactions);
   }, errorCallback);
 };

@@ -47,7 +47,7 @@ export default function GrowthView({
 
   return (
     <div className="flex-1 flex flex-col space-y-12 pb-32 animate-in fade-in duration-1000">
-      <div className="glass-card rounded-[3rem] border-white/5 p-8 md:p-12 relative flex flex-col">
+      <div className="glass-card rounded-[3rem] border-white/5 p-5 md:p-12 relative flex flex-col">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Wealth Trajectory</h2>
           <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export default function GrowthView({
           subtitle={`First record: ${validHistory[0]?.monthYear || 'N/A'}`}
         />
 
-        <div className="glass-card p-10 rounded-[2.5rem] border-white/5 flex flex-col justify-between">
+        <div className="glass-card p-6 md:p-10 rounded-[2.5rem] border-white/5 flex flex-col justify-between">
           <div>
             <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-4">Overall Growth</p>
             <div className="flex items-baseline gap-2">

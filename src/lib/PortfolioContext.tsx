@@ -135,38 +135,52 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [portfolioItems]);
 
   const metrics = useMemo(() => {
+    if (portfolioHistory.length === 0) {
+      return {
+        validHistory: [],
+        snapshotsThisMonth: 0,
+        canTakeSnapshot: true,
+        momChange: 0,
+        momPercent: 0,
+        overallGrowth: 0,
+        growthData: []
+      };
+    }
+
     const currentMonthYear = format(new Date(), "yyyy-MM");
-    const validHistory = [...portfolioHistory]
-      .filter(s => s.totalNetWorth !== -1)
-      .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
-
-    // Snapshot Info
-    const monthSnapshots = portfolioHistory.filter(s => s.monthYear === currentMonthYear).length;
-    const canTake = monthSnapshots < 2;
-
-    // MoM Growth (Compare current live data to the most recent snapshot that isn't from this month)
-    const sortedDescending = [...portfolioHistory]
-      .sort((a, b) => b.monthYear.localeCompare(a.monthYear));
     
-    const previousSnapshot = sortedDescending.find(s => s.monthYear !== currentMonthYear) || null;
-    
+    // Sort history once for all subsequent calculations
+    const sortedHistory = [...portfolioHistory].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+    const validHistory = sortedHistory.filter(s => s.totalNetWorth !== -1);
+
+    // Calc month snapshots efficiently
+    let snapshotsThisMonth = 0;
+    let previousSnapshot = null;
+    const monthlyMap: Record<string, any> = {};
+
+    for (let i = 0; i < sortedHistory.length; i++) {
+      const s = sortedHistory[i];
+      if (s.monthYear === currentMonthYear) {
+        snapshotsThisMonth++;
+      } else {
+        // Keep track of the most recent non-current-month snapshot
+        previousSnapshot = s;
+      }
+      if (s.totalNetWorth !== -1) {
+        monthlyMap[s.monthYear] = s;
+      }
+    }
+
     const momChange = previousSnapshot ? totals.totalNetWorth - previousSnapshot.totalNetWorth : 0;
     const momPercent = previousSnapshot && previousSnapshot.totalNetWorth !== 0 
       ? (momChange / previousSnapshot.totalNetWorth) * 100 
       : 0;
 
-    // Overall Growth
     const overallGrowth = validHistory.length > 0 
       ? totals.totalNetWorth - validHistory[0].totalNetWorth 
       : 0;
 
-    // Growth Trajectory Data (for charts)
-    const monthlyMap: Record<string, any> = {};
-    validHistory.forEach(s => {
-      monthlyMap[s.monthYear] = s;
-    });
-
-    // Promote live data for current month (or overwrite snapshot if live is newer)
+    // Promote live data to the end of the trajectory
     monthlyMap[currentMonthYear] = {
       id: "live",
       user_id: user?.uid || "temp",
@@ -187,8 +201,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
     return {
       validHistory,
-      snapshotsThisMonth: monthSnapshots,
-      canTakeSnapshot: canTake,
+      snapshotsThisMonth,
+      canTakeSnapshot: snapshotsThisMonth < 2,
       momChange,
       momPercent,
       overallGrowth,

@@ -113,31 +113,31 @@ export default function PortfolioPage() {
 
   return (
     <>
-      <div className="flex flex-col space-y-10 w-full max-w-[1600px] mx-auto selection:bg-primary/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-32">
+      <div className="flex flex-col space-y-2 md:space-y-10 w-full max-w-[1600px] mx-auto selection:bg-primary/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-24">
         
         <PageHeader 
           category="Portfolio"
           title="Asset Portfolio"
-          subtitle={<>Broad view of <span className="text-white font-bold">your accumulated wealth.</span></>}
+          subtitle={<>Broad view of <span className="text-white font-bold">accumulated wealth.</span></>}
           actions={
-            <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex flex-col gap-2 shrink-0 pt-1">
               {/* Integrated Net Worth & Status Card */}
-              <div className="glass-card px-8 py-5 flex items-center gap-10 border-white/10 bg-white/[0.02] shadow-2xl relative group/net overflow-hidden rounded-[2rem]">
+              <div className="glass-card px-4 py-2.5 md:px-8 md:py-5 flex items-center gap-4 md:gap-10 border-white/10 bg-white/[0.02] shadow-2xl relative group/net overflow-hidden rounded-2xl md:rounded-[2rem]">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/net:opacity-100 transition-opacity duration-1000" />
                 
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-primary/60 uppercase tracking-[0.4em] mb-2">Net Worth</span>
-                  <span className="text-3xl md:text-4xl font-black font-display text-white tracking-tighter tabular-nums drop-shadow-2xl">
+                  <span className="text-[8px] md:text-[10px] font-black text-primary/60 uppercase tracking-[0.4em] mb-0.5 md:mb-2">Net Worth</span>
+                  <span className="text-xl md:text-4xl font-black font-display text-white tracking-tighter tabular-nums drop-shadow-2xl">
                     {formatINR(netWorth)}
                   </span>
                 </div>
                 
-                <div className="h-12 w-[1px] bg-white/10" />
+                <div className="h-8 md:h-12 w-[1px] bg-white/10" />
                 
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-2">Status</span>
-                  <span className="text-[10px] font-black text-white/60 uppercase tracking-widest flex items-center gap-2 group-hover/status:text-primary transition-colors">
-                    <ShieldCheck className="h-4 w-4 text-primary shadow-glow-primary" /> SECURE
+                  <span className="text-[8px] md:text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-0.5 md:mb-2">Status</span>
+                  <span className="text-[8px] md:text-[10px] font-black text-white/60 uppercase tracking-widest flex items-center gap-2 group-hover/status:text-primary transition-colors">
+                    <ShieldCheck className="h-3 md:h-4 w-3 md:w-4 text-primary shadow-glow-primary" /> SECURE
                   </span>
                 </div>
               </div>

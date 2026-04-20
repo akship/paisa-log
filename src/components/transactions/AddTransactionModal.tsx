@@ -176,7 +176,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
         <div className="absolute -bottom-16 -left-16 w-38 h-38 bg-secondary/5 rounded-full blur-[60px] pointer-events-none" />
 
         {/* Header Unit */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-2 relative z-10">
+        <div className="flex items-center justify-between px-5 md:px-6 pt-5 md:pt-6 pb-2 relative z-10">
           <div>
             <h2 className="text-xl font-bold font-display tracking-tight text-on-surface">
               {initialData ? "Refine" : "New"} <span className="text-primary italic">Record</span>
@@ -191,7 +191,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 pb-8 pt-2 relative z-10">
+        <form onSubmit={handleSubmit} className="px-5 md:px-6 pb-7 md:pb-8 pt-2 relative z-10">
           {/* Prism Mode Selector */}
           <div className="grid grid-cols-2 rounded-2xl bg-white/[0.03] p-1.5 mb-6 border border-white/5 relative">
             <button
@@ -320,7 +320,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
           <button
             type="submit"
             disabled={loading || !amount}
-            className="mt-8 w-full flex items-center justify-center gap-2.5 rounded-[1.25rem] bg-primary/10 border border-primary/20 px-6 py-4.5 text-[10px] font-black uppercase tracking-[0.3em] text-primary hover:bg-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 disabled:opacity-20 disabled:grayscale disabled:scale-100 relative group/btn overflow-hidden"
+            className="mt-6 md:mt-8 w-full flex items-center justify-center gap-2.5 rounded-[1.25rem] bg-primary/10 border border-primary/20 px-6 py-4 md:py-4.5 text-[10px] font-black uppercase tracking-[0.3em] text-primary hover:bg-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 disabled:opacity-20 disabled:grayscale disabled:scale-100 relative group/btn overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
             <div className="absolute inset-0 bg-primary/5 group-hover/btn:bg-primary/10 transition-colors" />

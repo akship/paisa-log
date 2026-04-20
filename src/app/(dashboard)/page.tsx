@@ -83,7 +83,7 @@ export default function OverviewPage() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="flex flex-col space-y-10 w-full max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-32">
+    <div className="flex flex-col space-y-6 md:space-y-10 w-full max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-32">
 
       <PageHeader
         category="Overview"

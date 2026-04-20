@@ -242,22 +242,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const now = new Date();
     const currentMonth = startOfMonth(now);
     
-    // Determine the lower bound (Joining Date)
+    // Fallback/Joining Date bound
     const joinedDate = user?.metadata?.creationTime 
       ? new Date(user.metadata.creationTime) 
       : now;
     const startBound = startOfMonth(joinedDate);
 
-    // Optimized view: Show months since joining (up to 24)
+    // Optimized view: Static list based on join date
     if (!isFullHistoryLoaded) {
       const months = [];
       for (let i = 0; i < 24; i++) {
         const d = new Date(currentMonth);
         d.setMonth(d.getMonth() - i);
-        
-        // Stop if we go before the joining month
         if (d < startBound) break;
-
         months.push({
           value: format(d, "yyyy-MM"),
           label: format(d, "MMMM yyyy")
@@ -266,8 +263,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return months;
     }
 
-    // Full history mode: If there are transactions earlier than join date (rare), 
-    // we use the earliest transaction, otherwise joined date.
+    // Full history mode: Needs earliest transaction date
     const earliestTxDate = transactions.length > 0 
       ? transactions.reduce((min, tx) => tx.timestamp < min ? tx.timestamp : min, transactions[0].timestamp)
       : joinedDate;
@@ -276,19 +272,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const end = currentMonth;
 
     try {
-      const result = eachMonthOfInterval({ start, end });
-      return result.reverse().map(date => ({
+      return eachMonthOfInterval({ start, end }).reverse().map(date => ({
         value: format(date, "yyyy-MM"),
         label: format(date, "MMMM yyyy")
       }));
     } catch (e) {
-      // Fallback in case of invalid interval
-      return [{ 
-        value: format(now, "yyyy-MM"), 
-        label: format(now, "MMMM yyyy") 
-      }];
+      return [{ value: format(now, "yyyy-MM"), label: format(now, "MMMM yyyy") }];
     }
-  }, [transactions, isFullHistoryLoaded, user]);
+  }, [isFullHistoryLoaded, user?.metadata?.creationTime, transactions.length > 0 ? transactions[transactions.length-1].id : null]);
 
   return (
     <DataContext.Provider value={{
