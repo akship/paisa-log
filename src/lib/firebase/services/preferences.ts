@@ -1,4 +1,4 @@
-import { 
+import {
   doc,
   getDoc,
   setDoc,
@@ -68,7 +68,7 @@ export const updateUserPreferences = async (userId: string, data: Partial<UserPr
 export const incrementCategoryUsage = async (userId: string, type: "income" | "expense", category: string) => {
   const docRef = doc(db, USERS_COLLECTION, userId);
   const fieldPath = `categoryUsage.${type}.${category.replace(/\./g, '_')}`;
-  
+
   try {
     await updateDoc(docRef, {
       [fieldPath]: increment(1)

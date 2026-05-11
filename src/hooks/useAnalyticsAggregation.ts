@@ -15,12 +15,12 @@ export function useAnalyticsAggregation(filteredTransactions: Transaction[], dat
     for (const tx of filteredTransactions) {
       const amount = tx.amount;
       const isIncome = tx.type === "income";
-      
+
       // Consolidated Category Logic
       // 1. All income goes to "Income"
       // 2. Expenses keep their original category
       const targetCat = isIncome ? "Total Inflow" : tx.category;
-      
+
       if (!transactionsByCategory[targetCat]) transactionsByCategory[targetCat] = [];
       transactionsByCategory[targetCat].push(tx);
 
@@ -34,12 +34,12 @@ export function useAnalyticsAggregation(filteredTransactions: Transaction[], dat
     }
 
     // Return only active categories
-    return { 
-      incomeTotal, 
-      expenseTotal, 
-      expensesByCategory: expenseCatSum, 
-      incomeByCategory: incomeCatSum, 
-      transactionsByCategory 
+    return {
+      incomeTotal,
+      expenseTotal,
+      expensesByCategory: expenseCatSum,
+      incomeByCategory: incomeCatSum,
+      transactionsByCategory
     };
   }, [filteredTransactions]);
 }

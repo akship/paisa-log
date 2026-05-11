@@ -19,18 +19,18 @@ interface Props {
 let lastDate = new Date().toISOString().split('T')[0];
 
 export default function AddTransactionModal({ isOpen, onClose, initialData }: Props) {
-  const { user, preferences, encryptionKey } = useAuth();
+  const { user, encryptionKey } = useAuth();
   const [mounted, setMounted] = useState(false);
   useScrollLock(isOpen);
-  
+
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(() => lastDate);
-  
+
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<{desc: string, cat: string}[]>([]);
+  const [suggestions, setSuggestions] = useState<{ desc: string, cat: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { transactions, categories: dataCategories } = useData();
@@ -86,10 +86,10 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
     if (isOpen) {
       const uniqueDescriptions = new Set<string>();
       const sugg: { desc: string, cat: string }[] = [];
-      
+
       // Filter transactions by current type for domain-specific suggestions
       const relevantTransactions = transactions.filter(t => t.type === type);
-      
+
       for (const tx of relevantTransactions) {
         if (!tx.description || tx.description === "[Locked Data]") continue;
         const normalizedDesc = tx.description.trim().toLowerCase();
@@ -105,14 +105,14 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
 
   if (!isOpen || !mounted) return null;
 
-  const filteredSuggestions = suggestions.filter(s => 
+  const filteredSuggestions = suggestions.filter(s =>
     s.desc.toLowerCase().includes(description.toLowerCase()) && s.desc !== description
   ).slice(0, 5);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !amount || isNaN(Number(amount))) return;
-    
+
     setLoading(true);
     const numAmount = Math.floor(Number(amount));
     const txDate = new Date(date);
@@ -145,7 +145,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
           timestamp: txDate
         }, encryptionKey);
       }
-      
+
       onClose();
     } catch (error: any) {
       console.error("Error saving transaction:", error);
@@ -158,14 +158,14 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto pt-10 sm:pt-20">
       {/* Dynamic Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-[#060912]/85 backdrop-blur-xl transition-opacity duration-500"
         onClick={onClose}
       />
-      
+
       {/* Main Glass Shell */}
       <div className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-[#0c1222]/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] transition-all transform animate-in fade-in zoom-in-95 slide-in-from-top-10 duration-500 mb-10">
-        
+
         {/* Prismatic Shine Overlay */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
           <div className="absolute top-[-100%] left-[-100%] w-[300%] h-[300%] bg-gradient-to-tr from-transparent via-white/20 to-transparent animate-shimmer" />
@@ -183,8 +183,8 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
             </h2>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant opacity-40 mt-0.5">Details</p>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="rounded-2xl p-2.5 bg-white/5 text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90"
           >
             <X className="h-5 w-5" />
@@ -197,11 +197,10 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
             <button
               type="button"
               onClick={() => setType("expense")}
-              className={`flex items-center justify-center gap-2.5 rounded-xl py-2.5 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 relative overflow-hidden ${
-                type === "expense" 
-                ? "bg-white/10 text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border border-white/10" 
-                : "text-on-surface-variant/40 hover:text-on-surface hover:bg-white/5 border border-transparent"
-              }`}
+              className={`flex items-center justify-center gap-2.5 rounded-xl py-2.5 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 relative overflow-hidden ${type === "expense"
+                  ? "bg-white/10 text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border border-white/10"
+                  : "text-on-surface-variant/40 hover:text-on-surface hover:bg-white/5 border border-transparent"
+                }`}
             >
               {type === "expense" && <div className="absolute inset-0 bg-tertiary/10 animate-pulse" />}
               <ArrowUpRight className={`h-3.5 w-3.5 stroke-[3px] transition-colors ${type === "expense" ? "text-tertiary" : ""}`} /> Expense
@@ -209,11 +208,10 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
             <button
               type="button"
               onClick={() => setType("income")}
-              className={`flex items-center justify-center gap-2.5 rounded-xl py-2.5 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 relative overflow-hidden ${
-                type === "income" 
-                ? "bg-white/10 text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border border-white/10" 
-                : "text-on-surface-variant/40 hover:text-on-surface hover:bg-white/5 border border-transparent"
-              }`}
+              className={`flex items-center justify-center gap-2.5 rounded-xl py-2.5 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 relative overflow-hidden ${type === "income"
+                  ? "bg-white/10 text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border border-white/10"
+                  : "text-on-surface-variant/40 hover:text-on-surface hover:bg-white/5 border border-transparent"
+                }`}
             >
               {type === "income" && <div className="absolute inset-0 bg-secondary/10 animate-pulse" />}
               <ArrowDownRight className={`h-3.5 w-3.5 stroke-[3px] transition-colors ${type === "income" ? "text-secondary" : ""}`} /> Inflow
@@ -256,7 +254,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
                   className="w-full bg-white/[0.02] border border-white/5 px-4 py-3.5 text-xs font-bold text-on-surface placeholder:text-on-surface-variant/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.04] transition-all rounded-2xl"
                   placeholder="What was this for?"
                 />
-                
+
                 {showSuggestions && filteredSuggestions.length > 0 && (
                   <div className="absolute z-20 w-full mt-2 bg-[#0c1222]/90 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl">
                     {filteredSuggestions.map((s, idx) => (

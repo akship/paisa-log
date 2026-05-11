@@ -22,14 +22,16 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
   const [displayLimit, setDisplayLimit] = useState(50);
 
   const filteredTransactions = useMemo(() => {
-    return [...transactions]
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .filter(tx => {
-        const matchesSearch = (tx.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.category.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === "All" || tx.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-      });
+    const lowerSearch = searchTerm.toLowerCase();
+    
+    return transactions.filter(tx => {
+      const matchesSearch = !lowerSearch || 
+        (tx.description || "").toLowerCase().includes(lowerSearch) ||
+        tx.category.toLowerCase().includes(lowerSearch);
+      
+      const matchesCategory = selectedCategory === "All" || tx.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
   }, [transactions, searchTerm, selectedCategory]);
 
   const displayedTransactions = useMemo(() => {
@@ -39,7 +41,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
   const handleShowMore = () => {
     const nextLimit = displayLimit + 50;
     setDisplayLimit(nextLimit);
-    
+
     // If we are reaching the end of currently loaded transactions, trigger a background fetch
     if (nextLimit > transactions.length && hasMore) {
       loadMore();
@@ -66,11 +68,10 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
             <div className="relative">
               <button
                 onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all text-xs font-black uppercase tracking-widest ${
-                  selectedCategory !== "All" 
-                    ? "border-primary/40 bg-primary/10 text-primary shadow-glow-primary/10" 
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all text-xs font-black uppercase tracking-widest ${selectedCategory !== "All"
+                    ? "border-primary/40 bg-primary/10 text-primary shadow-glow-primary/10"
                     : "border-white/5 bg-white/5 text-white/60 hover:bg-white/10"
-                }`}
+                  }`}
               >
                 <Filter className="h-4 w-4" />
                 <span className="hidden md:inline truncate max-w-[80px]">
@@ -89,11 +90,10 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                           setSelectedCategory("All");
                           setShowCategoryFilter(false);
                         }}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                          selectedCategory === "All"
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${selectedCategory === "All"
                             ? "bg-white text-background shadow-xl"
                             : "text-white/20 hover:bg-white/5 hover:text-white"
-                        }`}
+                          }`}
                       >
                         Show All Records
                       </button>
@@ -108,11 +108,10 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                                 setSelectedCategory(cat);
                                 setShowCategoryFilter(false);
                               }}
-                              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                selectedCategory === cat
+                              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat
                                   ? "bg-primary/20 text-primary border border-primary/20"
                                   : "text-white/40 hover:bg-white/5 hover:text-white"
-                              }`}
+                                }`}
                             >
                               {cat}
                             </button>
@@ -130,11 +129,10 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                                 setSelectedCategory(cat);
                                 setShowCategoryFilter(false);
                               }}
-                              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                selectedCategory === cat
+                              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat
                                   ? "bg-secondary/20 text-secondary border border-secondary/20"
                                   : "text-white/40 hover:bg-white/5 hover:text-white"
-                              }`}
+                                }`}
                             >
                               {cat}
                             </button>
@@ -154,7 +152,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
         {filteredTransactions.length === 0 ? (
           <div className="p-12 md:p-20 text-center flex flex-col items-center glass-card border-white/5 bg-white/[0.01] relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50"></div>
-            
+
             <div className="relative mb-10">
               <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150 animate-pulse"></div>
               <div className="h-24 w-24 relative flex items-center justify-center rounded-[2.5rem] bg-white/5 border border-white/10 shadow-2xl backdrop-blur-3xl group-hover:scale-110 transition-transform duration-1000">
@@ -178,7 +176,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
             `}</style>
           </div>
         ) : (
-          <motion.div 
+          <motion.div
             initial="hidden"
             animate="visible"
             variants={{
@@ -194,7 +192,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
           >
             <AnimatePresence mode="popLayout">
               {displayedTransactions.map((tx) => (
-                <motion.div 
+                <motion.div
                   key={tx.id}
                   layout
                   variants={{
@@ -232,7 +230,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                         {formatINR(tx.amount).replace('₹', '')}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-4 sm:group-hover:translate-x-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
@@ -255,21 +253,21 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
         )}
 
         {(hasMore || filteredTransactions.length > displayLimit) && (
-        <div className="flex justify-center pt-8 pb-4">
-          <button
-            onClick={handleShowMore}
-            disabled={loading}
-            className="group relative px-10 py-4 bg-white/[0.03] hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-            <div className="relative z-10 flex items-center gap-3">
-              {loading && <Loader2 className="h-4 w-4 text-primary animate-spin" />}
-              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 group-hover:text-primary transition-colors duration-500">
-                {loading ? "Scanning records..." : "Show More Records"}
-              </span>
-            </div>
-          </button>
-        </div>
+          <div className="flex justify-center pt-8 pb-4">
+            <button
+              onClick={handleShowMore}
+              disabled={loading}
+              className="group relative px-10 py-4 bg-white/[0.03] hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+              <div className="relative z-10 flex items-center gap-3">
+                {loading && <Loader2 className="h-4 w-4 text-primary animate-spin" />}
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 group-hover:text-primary transition-colors duration-500">
+                  {loading ? "Scanning records..." : "Show More Records"}
+                </span>
+              </div>
+            </button>
+          </div>
         )}
       </div>
     </div>

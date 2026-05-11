@@ -1,11 +1,11 @@
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  Timestamp, 
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  Timestamp,
   getDocs,
   doc,
   deleteDoc,
@@ -31,7 +31,7 @@ const decryptionCache = new Map<string, Transaction>();
 let lastActiveKey: CryptoKey | null = null;
 
 export const subscribeToTransactions = (
-  userId: string, 
+  userId: string,
   callback: (transactions: Transaction[]) => void,
   encryptionKey: CryptoKey | null = null,
   options?: SubscriptionOptions,
@@ -65,7 +65,7 @@ export const subscribeToTransactions = (
     // Process only changes (added/modified) to optimize decryption
     const work = snapshot.docChanges().map(async (change) => {
       const docId = change.doc.id;
-      
+
       if (change.type === "removed") {
         decryptionCache.delete(docId);
         return;
@@ -122,7 +122,7 @@ export const subscribeToTransactions = (
 export const getAllUserTransactions = async (userId: string, encryptionKey: CryptoKey | null = null): Promise<Transaction[]> => {
   const q = query(collection(db, TRANSACTIONS_COLLECTION), where("user_id", "==", userId));
   const snapshot = await getDocs(q);
-  
+
   const transactionPromises = snapshot.docs.map(async (doc) => {
     const data = doc.data();
     const tx: Transaction = {
@@ -160,7 +160,7 @@ export const getAllUserTransactions = async (userId: string, encryptionKey: Cryp
     }
     return tx;
   });
-  
+
   return Promise.all(transactionPromises);
 };
 
@@ -191,11 +191,11 @@ export const checkDuplicateTransaction = async (
 
   for (const d of querySnapshot.docs) {
     const data = d.data();
-    
+
     // 1. Direct match for unencrypted legacy data
     if (!data.isEncrypted) {
       if (data.amount === amount && data.category === category && data.description === description) return true;
-    } 
+    }
     // 2. Precision match for encrypted data if key is available
     else if (encryptionKey) {
       try {
@@ -234,17 +234,17 @@ export const addTransaction = async (transaction: Omit<Transaction, "id">, encry
   }
 
   const docRef = await addDoc(collection(db, TRANSACTIONS_COLLECTION), data);
-  
+
   // Update category usage for smart sorting
   await incrementCategoryUsage(transaction.user_id, transaction.type, transaction.category);
-  
+
   return docRef.id;
 };
 
 export const updateTransaction = async (transactionId: string, data: Partial<Transaction>, encryptionKey: CryptoKey | null = null) => {
   const docRef = doc(db, TRANSACTIONS_COLLECTION, transactionId);
   const updateData: any = { ...data };
-  
+
   if (data.timestamp) {
     updateData.timestamp = Timestamp.fromDate(data.timestamp);
   }
@@ -252,15 +252,15 @@ export const updateTransaction = async (transactionId: string, data: Partial<Tra
   if (encryptionKey) {
     updateData.isEncrypted = true;
     updateData.v = 1;
-    
+
     const encryptionPromises = [];
     if (data.description) encryptionPromises.push(CryptoUtils.encryptString(data.description, encryptionKey).then(res => updateData.description = res));
     if (data.category) encryptionPromises.push(CryptoUtils.encryptString(data.category, encryptionKey).then(res => updateData.category = res));
     if (data.amount !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(data.amount, encryptionKey).then(res => updateData.amount = res));
-    
+
     await Promise.all(encryptionPromises);
   }
-  
+
   await updateDoc(docRef, updateData);
 };
 
@@ -269,11 +269,11 @@ export const bulkUpdateTransactions = async (
   encryptionKey: CryptoKey | null = null
 ) => {
   const batch = writeBatch(db);
-  
+
   const processPromises = updates.map(async ({ id, data }) => {
     const docRef = doc(db, TRANSACTIONS_COLLECTION, id);
     const updateData: any = { ...data };
-    
+
     if (data.timestamp) {
       updateData.timestamp = Timestamp.fromDate(data.timestamp);
     }
@@ -285,7 +285,7 @@ export const bulkUpdateTransactions = async (
       if (data.category) updateData.category = await CryptoUtils.encryptString(data.category, encryptionKey);
       if (data.amount !== undefined) updateData.amount = await CryptoUtils.encryptNumber(data.amount, encryptionKey);
     }
-    
+
     batch.update(docRef, updateData);
   });
 

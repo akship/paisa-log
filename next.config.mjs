@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  cacheComponents: true,
+  experimental: {
+    instantNavigationDevToolsToggle: true,
+  },
   typescript: {
     ignoreBuildErrors: false,
   },

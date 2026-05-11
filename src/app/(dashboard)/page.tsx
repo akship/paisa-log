@@ -1,17 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Plus, ArrowUpRight, ArrowDownRight, IndianRupee, History, Edit2, Trash2 } from "lucide-react";
-import { formatINR } from "@/lib/utils";
 import { Transaction, deleteTransaction } from "@/lib/firebase/firestore";
 import { useAuth } from "@/lib/firebase/auth";
 import { useData } from "@/lib/DataContext";
+import { formatINR } from "@/lib/utils";
 import { format } from "date-fns";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
 import DeleteConfirmModal from "@/components/transactions/DeleteConfirmModal";
-import { BASE_EXPENSE_CATEGORIES, BASE_INCOME_CATEGORIES } from "@/lib/constants";
-import { Search, Filter, Layers, ListFilter, Tag, ChevronDown } from "lucide-react";
-import { useMemo } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import SummaryGrid from "@/components/dashboard/SummaryGrid";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";

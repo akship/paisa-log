@@ -18,9 +18,9 @@ import PageLoading from "@/components/layout/PageLoading";
 
 export default function AnalyticsPage() {
   const { user, encryptionKey } = useAuth();
-  const { 
-    transactions: rawTransactions, 
-    transactionsLoading, 
+  const {
+    transactions: rawTransactions,
+    transactionsLoading,
     categories: dataCategories,
     monthsList,
     error: dataError,
@@ -42,10 +42,10 @@ export default function AnalyticsPage() {
     liabilities,
     error: portfolioError
   } = usePortfolio();
-  
+
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') === 'growth' ? 'growth' : 'spending') as AnalyticsTab;
-  
+
   // States
   const [activeTab, setActiveTab] = useState<AnalyticsTab>(initialTab);
   const [preset, setPreset] = useState<DatePreset>("specific_month");
@@ -110,8 +110,8 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex flex-col space-y-6 w-full max-w-[1600px] mx-auto selection:bg-blue-500/30 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-32">
-      
-      <AnalyticsHeader 
+
+      <AnalyticsHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         preset={preset}
@@ -129,15 +129,15 @@ export default function AnalyticsPage() {
       />
 
       {(isLoading && rawTransactions.length === 0 || activeError) ? (
-        <PageLoading 
-          loading={isLoading} 
-          error={activeError} 
-          isWarning={isWarning} 
+        <PageLoading
+          loading={isLoading}
+          error={activeError}
+          isWarning={isWarning}
           onBypass={() => forceStopLoading()}
           message={activeTab === "spending" ? "Scanning records..." : "Analyzing trajectory..."}
         />
       ) : activeTab === "spending" ? (
-        <SpendingView 
+        <SpendingView
           filteredTransactions={filteredTransactions}
           incomeTotal={incomeTotal}
           expenseTotal={expenseTotal}
@@ -149,7 +149,7 @@ export default function AnalyticsPage() {
           setEditingTx={setEditingTx}
         />
       ) : (
-        <GrowthView 
+        <GrowthView
           portfolioHistory={portfolioHistory}
           netWorth={netWorth}
           liquid={liquid}
@@ -161,9 +161,9 @@ export default function AnalyticsPage() {
         />
       )}
 
-      <AddTransactionModal 
-        isOpen={!!editingTx} 
-        onClose={() => setEditingTx(null)} 
+      <AddTransactionModal
+        isOpen={!!editingTx}
+        onClose={() => setEditingTx(null)}
         initialData={editingTx}
       />
     </div>

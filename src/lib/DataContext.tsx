@@ -2,12 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/firebase/auth";
-import { 
-  subscribeToTransactions, 
-  Transaction, 
-  subscribeToPortfolioHistory, 
-  PortfolioItem, 
-  PortfolioSnapshot,
+import {
+  subscribeToTransactions,
+  Transaction,
   UserPreferences,
   getUserPreferences
 } from "@/lib/firebase/firestore";
@@ -57,9 +54,9 @@ const DataContext = createContext<DataContextState>({
     balance: 0,
   },
   monthsList: [],
-  forceStopLoading: () => {},
-  loadMore: () => {},
-  loadFullHistory: () => {},
+  forceStopLoading: () => { },
+  loadMore: () => { },
+  loadFullHistory: () => { },
   hasMore: false,
   isFullHistoryLoaded: false,
 });
@@ -155,12 +152,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const updateMerged = () => {
         const merged = Array.from(new Map([...latestData, ...monthData].map(t => [t.id, t])).values())
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-        
+
         setTransactions(merged);
         setTransactionsLoading(false);
         setIsWarning(false);
         loadingRef.current = false;
-        
+
         // If latest fetch returned less than limit, we reached the end
         if (latestData.length < displayLimit) {
           setHasMore(false);
@@ -207,7 +204,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const categories = useMemo(() => {
     const expense = preferences?.enabledExpenseCategories || [...BASE_EXPENSE_CATEGORIES];
     const income = preferences?.enabledIncomeCategories || [...BASE_INCOME_CATEGORIES];
-    
+
     return {
       expense: [...expense].sort((a, b) => a.localeCompare(b)),
       income: [...income].sort((a, b) => a.localeCompare(b))
@@ -219,17 +216,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    const monthlyTx = transactions.filter(t =>
-      t.timestamp.getMonth() === currentMonth && t.timestamp.getFullYear() === currentYear
-    );
+    let income = 0;
+    let expense = 0;
 
-    const income = monthlyTx
-      .filter(t => t.type === "income")
-      .reduce((sum, t) => sum + t.amount, 0);
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      const tMonth = t.timestamp.getMonth();
+      const tYear = t.timestamp.getFullYear();
 
-    const expense = monthlyTx
-      .filter(t => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0);
+      if (tYear === currentYear && tMonth === currentMonth) {
+        if (t.type === "income") income += t.amount;
+        else if (t.type === "expense") expense += t.amount;
+      } else if (tYear < currentYear || (tYear === currentYear && tMonth < currentMonth)) {
+        // Transactions are sorted descending. If we hit an older month, stop iterating.
+        break;
+      }
+    }
 
     return {
       income,
@@ -241,10 +243,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const monthsList = useMemo(() => {
     const now = new Date();
     const currentMonth = startOfMonth(now);
-    
+
     // Fallback/Joining Date bound
-    const joinedDate = user?.metadata?.creationTime 
-      ? new Date(user.metadata.creationTime) 
+    const joinedDate = user?.metadata?.creationTime
+      ? new Date(user.metadata.creationTime)
       : now;
     const startBound = startOfMonth(joinedDate);
 
@@ -264,10 +266,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Full history mode: Needs earliest transaction date
-    const earliestTxDate = transactions.length > 0 
-      ? transactions.reduce((min, tx) => tx.timestamp < min ? tx.timestamp : min, transactions[0].timestamp)
+    const earliestTxDate = transactions.length > 0
+      ? transactions[transactions.length - 1].timestamp
       : joinedDate;
-    
+
     const start = startOfMonth(earliestTxDate < joinedDate ? earliestTxDate : joinedDate);
     const end = currentMonth;
 
@@ -279,7 +281,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       return [{ value: format(now, "yyyy-MM"), label: format(now, "MMMM yyyy") }];
     }
-  }, [isFullHistoryLoaded, user?.metadata?.creationTime, transactions.length > 0 ? transactions[transactions.length-1].id : null]);
+  }, [isFullHistoryLoaded, user?.metadata?.creationTime, transactions.length > 0 ? transactions[transactions.length - 1].id : null]);
 
   return (
     <DataContext.Provider value={{

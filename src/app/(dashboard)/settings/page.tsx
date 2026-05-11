@@ -29,7 +29,7 @@ function remapCategories(list: string[], remap: Record<string, string>, validSet
 }
 
 const VALID_EXPENSES = new Set(BASE_EXPENSE_CATEGORIES);
-const VALID_INCOME   = new Set(BASE_INCOME_CATEGORIES);
+const VALID_INCOME = new Set(BASE_INCOME_CATEGORIES);
 
 export default function SettingsPage() {
   const { user, preferences, refreshPreferences } = useAuth();
@@ -40,7 +40,7 @@ export default function SettingsPage() {
   const [newIncomeInput, setNewIncomeInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   const [activeTab, setActiveTab] = useState<"profile" | "categories" | "security">("profile");
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
@@ -48,7 +48,7 @@ export default function SettingsPage() {
     if (preferences) {
       setProfileName(preferences.customDisplayName || user?.displayName || "");
       const rawExpenses = preferences.enabledExpenseCategories || BASE_EXPENSE_CATEGORIES;
-      const rawIncome   = preferences.enabledIncomeCategories  || BASE_INCOME_CATEGORIES;
+      const rawIncome = preferences.enabledIncomeCategories || BASE_INCOME_CATEGORIES;
       setEnabledExpenses(remapCategories(rawExpenses, EXPENSE_REMAP, VALID_EXPENSES));
       setEnabledIncome(remapCategories(rawIncome, INCOME_REMAP, VALID_INCOME));
     }
@@ -89,7 +89,7 @@ export default function SettingsPage() {
       alert("Category already exists");
       return;
     }
-    
+
     setList([...list, value]);
     setInput("");
   };
@@ -102,8 +102,8 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col space-y-10 max-w-7xl mx-auto px-4 lg:px-0 pb-32">
-      
-      <PageHeader 
+
+      <PageHeader
         category="System Configuration"
         title={<>Preferences <span className="text-primary italic font-serif">&</span> Control</>}
         subtitle="Fine-tune your financial intelligence matrix."
@@ -125,7 +125,7 @@ export default function SettingsPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        
+
         {/* Sidebar Navigation */}
         <div className="md:col-span-1 pr-6 hidden md:block">
           <div className="sticky top-12 space-y-3">
@@ -134,14 +134,13 @@ export default function SettingsPage() {
               { id: "categories", label: "Categories", icon: Hash },
               { id: "security", label: "Security", icon: ShieldCheck }
             ].map((tab) => (
-              <button 
+              <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex w-full items-center gap-4 px-6 py-4.5 rounded-[1.25rem] font-bold uppercase tracking-[0.15em] text-[10px] transition-all duration-500 border ${
-                  activeTab === tab.id 
-                    ? "bg-primary/10 text-primary border-primary/20 shadow-glow-primary translate-x-2" 
+                className={`flex w-full items-center gap-4 px-6 py-4.5 rounded-[1.25rem] font-bold uppercase tracking-[0.15em] text-[10px] transition-all duration-500 border ${activeTab === tab.id
+                    ? "bg-primary/10 text-primary border-primary/20 shadow-glow-primary translate-x-2"
                     : "text-on-surface-variant/40 hover:bg-white/[0.03] hover:text-on-surface-variant border-transparent"
-                }`}
+                  }`}
               >
                 <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-primary" : "opacity-40"}`} /> {tab.label}
               </button>
@@ -151,33 +150,32 @@ export default function SettingsPage() {
 
         {/* Mobile Navigation Pills */}
         <div className="flex md:hidden gap-3 pb-6 overflow-x-auto no-scrollbar border-b border-white/5">
-           {[
-              { id: "profile", label: "Identity", icon: User },
-              { id: "categories", label: "Categories", icon: Hash },
-              { id: "security", label: "Security", icon: ShieldCheck }
-            ].map((tab) => (
-             <button 
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center whitespace-nowrap gap-2.5 px-4 md:px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all ${
-                  activeTab === tab.id 
-                    ? "bg-primary/20 text-primary border border-primary/30 shadow-glow-primary" 
-                    : "text-on-surface-variant/50 bg-white/[0.03] border border-white/5"
+          {[
+            { id: "profile", label: "Identity", icon: User },
+            { id: "categories", label: "Categories", icon: Hash },
+            { id: "security", label: "Security", icon: ShieldCheck }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center whitespace-nowrap gap-2.5 px-4 md:px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all ${activeTab === tab.id
+                  ? "bg-primary/20 text-primary border border-primary/30 shadow-glow-primary"
+                  : "text-on-surface-variant/50 bg-white/[0.03] border border-white/5"
                 }`}
-              >
-                <tab.icon className="h-3.5 w-3.5" /> {tab.label}
-              </button>
-            ))}
+            >
+              <tab.icon className="h-3.5 w-3.5" /> {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Content Area */}
         <div className="md:col-span-3 space-y-8">
-          
+
           {activeTab === "profile" && (
             <div className="animate-in slide-in-from-bottom-4 fade-in duration-700">
               <section className="glass-card rounded-[2rem] p-5 md:p-10 space-y-8 bg-white/[0.01]">
-                <SectionHeader 
-                  title="Identity Matrix" 
+                <SectionHeader
+                  title="Identity Matrix"
                   icon={<User className="h-4 w-4" />}
                 />
 
@@ -209,8 +207,8 @@ export default function SettingsPage() {
             <div className="space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-700">
               {/* Outflow Categories */}
               <section className="glass-card rounded-[1.5rem] p-5 md:p-8 space-y-6 bg-white/[0.01]">
-                <SectionHeader 
-                  title="Outflow Categories" 
+                <SectionHeader
+                  title="Outflow Categories"
                   icon={<ArrowUpRight className="h-4 w-4" />}
                 />
 
@@ -221,7 +219,7 @@ export default function SettingsPage() {
                       className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-sm font-bold text-on-surface-variant hover:border-white/20 transition-all group/tag"
                     >
                       {category}
-                      <button 
+                      <button
                         onClick={() => removeCategory('expense', category)}
                         className="p-1.5 hover:bg-tertiary/20 rounded-xl text-on-surface-variant/40 hover:text-tertiary transition-all"
                       >
@@ -229,9 +227,9 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   ))}
-                  
+
                   <div className="flex items-center gap-2 group/input ml-2">
-                    <input 
+                    <input
                       type="text"
                       value={newExpenseInput}
                       onChange={(e) => setNewExpenseInput(e.target.value)}
@@ -239,7 +237,7 @@ export default function SettingsPage() {
                       placeholder="Add Category..."
                       className="bg-transparent border-b border-white/5 px-4 py-2 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/20 focus:outline-none focus:border-tertiary/50 w-40 transition-all"
                     />
-                    <button 
+                    <button
                       onClick={() => addCategory('expense')}
                       className="p-2.5 bg-tertiary/10 text-tertiary rounded-xl hover:bg-tertiary/20 transition-all border border-tertiary/20 active:scale-90"
                     >
@@ -251,8 +249,8 @@ export default function SettingsPage() {
 
               {/* Inflow Categories */}
               <section className="glass-card rounded-[1.5rem] p-5 md:p-8 space-y-6 bg-white/[0.01]">
-                <SectionHeader 
-                  title="Inflow Categories" 
+                <SectionHeader
+                  title="Inflow Categories"
                   icon={<ArrowDownRight className="h-4 w-4" />}
                 />
 
@@ -263,7 +261,7 @@ export default function SettingsPage() {
                       className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-sm font-bold text-on-surface-variant hover:border-white/20 transition-all group/tag"
                     >
                       {category}
-                      <button 
+                      <button
                         onClick={() => removeCategory('income', category)}
                         className="p-1.5 hover:bg-secondary/20 rounded-xl text-on-surface-variant/40 hover:text-secondary transition-all"
                       >
@@ -271,9 +269,9 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   ))}
-                  
+
                   <div className="flex items-center gap-2 group/input ml-2">
-                    <input 
+                    <input
                       type="text"
                       value={newIncomeInput}
                       onChange={(e) => setNewIncomeInput(e.target.value)}
@@ -281,7 +279,7 @@ export default function SettingsPage() {
                       placeholder="Add Category..."
                       className="bg-transparent border-b border-white/5 px-4 py-2 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/20 focus:outline-none focus:border-secondary/50 w-40 transition-all"
                     />
-                    <button 
+                    <button
                       onClick={() => addCategory('income')}
                       className="p-2.5 bg-secondary/10 text-secondary rounded-xl hover:bg-secondary/20 transition-all border border-secondary/20 active:scale-90"
                     >
@@ -296,15 +294,15 @@ export default function SettingsPage() {
           {activeTab === "security" && (
             <div className="animate-in slide-in-from-bottom-4 fade-in duration-700">
               <section className="glass-card rounded-[2rem] p-5 md:p-10 space-y-8 bg-white/[0.01]">
-                <SectionHeader 
-                  title="Security Vault" 
+                <SectionHeader
+                  title="Security Vault"
                   icon={<Key className="h-4 w-4" />}
                 />
 
                 <div className="space-y-8 max-w-xl">
                   <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
                     <p className="text-sm text-on-surface-variant/80 font-medium leading-relaxed">
-                      Your data is encrypted with AES-GCM 256-bit encryption. Your 6-digit PIN is the master key used to unlock your vault. 
+                      Your data is encrypted with AES-GCM 256-bit encryption. Your 6-digit PIN is the master key used to unlock your vault.
                     </p>
                     <div className="flex items-start gap-4 p-4 rounded-xl bg-tertiary/5 border border-tertiary/10">
                       <AlertCircle className="h-5 w-5 text-tertiary shrink-0 mt-0.5" />
@@ -324,9 +322,9 @@ export default function SettingsPage() {
                 </div>
               </section>
 
-              <ChangePinModal 
-                isOpen={isPinModalOpen} 
-                onClose={() => setIsPinModalOpen(false)} 
+              <ChangePinModal
+                isOpen={isPinModalOpen}
+                onClose={() => setIsPinModalOpen(false)}
               />
             </div>
           )}
