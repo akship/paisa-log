@@ -95,6 +95,8 @@ export async function encryptData(text: string, key: CryptoKey): Promise<string>
  * Decrypts a base64 encoded combined string (IV + Ciphertext).
  */
 export async function decryptData(combinedBase64: string, key: CryptoKey): Promise<string> {
+  if (!combinedBase64) return "";
+
   try {
     const binary = atob(combinedBase64);
     const combined = Uint8Array.from(binary, (c) => c.charCodeAt(0));

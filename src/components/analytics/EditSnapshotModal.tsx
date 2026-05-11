@@ -109,12 +109,12 @@ export default function EditSnapshotModal({ isOpen, onClose, snapshot, encryptio
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-[#060912]/85 backdrop-blur-xl transition-opacity duration-500"
+        className="fixed inset-0 bg-background/85 backdrop-blur-xl transition-opacity duration-500"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl glass-card rounded-[2.5rem] border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-700 bg-[#060912]/90 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl glass-card rounded-[2.5rem] border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-700 bg-background/90 flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between p-8 border-b border-white/5 bg-white/[0.02] shrink-0">

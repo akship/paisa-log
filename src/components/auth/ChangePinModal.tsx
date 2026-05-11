@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/firebase/auth";
 import { deriveKeyFromPin, CryptoUtils, exportVaultKey } from "@/lib/cryptography";
 import { 
@@ -10,7 +11,7 @@ import {
   getAllUserPortfolioHistory,
   updateTransaction, 
   updatePortfolioItem,
-  savePortfolioSnapshot
+  updatePortfolioSnapshot
 } from "@/lib/firebase/firestore";
 import { VAULT_CANARY } from "@/lib/constants";
 import { Lock, RefreshCw, AlertCircle, ShieldCheck, X, Check } from "lucide-react";
@@ -33,7 +34,28 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
   const [failedItems, setFailedItems] = useState<{id: string, type: string}[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep("verify");
+      setOldPin("");
+      setNewPin("");
+      setConfirmPin("");
+      setHasConsented(false);
+      setMigrationStats({ current: 0, total: 0 });
+      setFailedItems([]);
+      setError(null);
+      setIsProcessing(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +159,8 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
           setMigrationStats(prev => ({ ...prev, current: prev.current + 1 }));
           continue;
         }
-        await updateTransaction(tx.id!, { ...tx }, newKey);
+        const { id, decryptionFailed, ...txData } = tx;
+        await updateTransaction(id!, txData, newKey);
         setMigrationStats(prev => ({ ...prev, current: prev.current + 1 }));
       }
 
@@ -147,7 +170,8 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
           setMigrationStats(prev => ({ ...prev, current: prev.current + 1 }));
           continue;
         }
-        await updatePortfolioItem(item.id!, { ...item }, newKey);
+        const { id, decryptionFailed, ...itemData } = item;
+        await updatePortfolioItem(id!, itemData, newKey);
         setMigrationStats(prev => ({ ...prev, current: prev.current + 1 }));
       }
 
@@ -157,9 +181,8 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
           setMigrationStats(prev => ({ ...prev, current: prev.current + 1 }));
           continue;
         }
-        // Strip id and timestamp as expected by savePortfolioSnapshot
-        const { id, timestamp, ...snapshotData } = snapshot;
-        await savePortfolioSnapshot(snapshotData, newKey);
+        const { id, decryptionFailed, ...snapshotData } = snapshot;
+        await updatePortfolioSnapshot(id!, snapshotData, newKey);
         setMigrationStats(prev => ({ ...prev, current: prev.current + 1 }));
       }
 
@@ -185,9 +208,9 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
   };
 
 
-  return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#060912]/85 backdrop-blur-xl animate-in fade-in duration-500">
-      <div className="glass-card max-w-md w-full p-8 md:p-10 border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative">
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/85 backdrop-blur-xl animate-in fade-in duration-500">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-surface-container/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] p-8 transition-all transform zoom-in-95">
         <button 
           onClick={onClose}
           className="absolute top-6 right-6 p-2 rounded-xl hover:bg-white/5 transition-colors"
@@ -359,6 +382,7 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

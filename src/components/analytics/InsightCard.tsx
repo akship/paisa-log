@@ -79,7 +79,7 @@ export default function InsightCard({
                     <p className="text-xl font-bold md:font-black font-display text-white">{formatINR(total)}</p>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={280} minWidth={0}>
+                <ResponsiveContainer width="100%" height="100%" minHeight={280} minWidth={100}>
                   <PieChart>
                     <Pie
                       data={chartData}

@@ -38,12 +38,12 @@ export default function DeleteConfirmModal({
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto pt-20">
       {/* Dynamic Backdrop */}
       <div 
-        className="fixed inset-0 bg-[#060912]/85 backdrop-blur-xl transition-opacity duration-500"
+        className="fixed inset-0 bg-background/85 backdrop-blur-xl transition-opacity duration-500"
         onClick={onClose}
       />
       
       {/* Modal Shell */}
-      <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-[#0c1222]/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] p-6 text-center transition-all transform animate-in zoom-in-95 fade-in duration-300">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-surface-container/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] p-6 text-center transition-all transform animate-in zoom-in-95 fade-in duration-300">
         
         <div className="bg-tertiary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 ring-1 ring-tertiary/20">
           <AlertTriangle className="h-8 w-8 text-tertiary" />

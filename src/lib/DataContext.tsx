@@ -3,10 +3,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/firebase/auth";
 import {
-  subscribeToTransactions,
-  Transaction,
-  UserPreferences,
-  getUserPreferences
+  subscribeToTransactions, 
+  Transaction, 
+  UserPreferences, 
+  getUserPreferences,
+  getRecentMemos
 } from "@/lib/firebase/firestore";
 import { useMemo } from "react";
 import { startOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -36,6 +37,7 @@ interface DataContextState {
   loadFullHistory: () => void;
   hasMore: boolean;
   isFullHistoryLoaded: boolean;
+  recentMemos: { desc: string; cat: string; type: "income" | "expense" }[];
 }
 
 const DataContext = createContext<DataContextState>({
@@ -59,6 +61,7 @@ const DataContext = createContext<DataContextState>({
   loadFullHistory: () => { },
   hasMore: false,
   isFullHistoryLoaded: false,
+  recentMemos: [],
 });
 
 export const useData = () => useContext(DataContext);
@@ -74,6 +77,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [displayLimit, setDisplayLimit] = useState(50);
   const [isFullHistoryLoaded, setIsFullHistoryLoaded] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [recentMemos, setRecentMemos] = useState<{ desc: string, cat: string, type: "income" | "expense" }[]>([]);
 
 
   // Fetch preferences
@@ -90,6 +94,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     fetchPrefs();
   }, [user]);
+
+
+  // Fetch recent memos for suggestions (last 3 months)
+  useEffect(() => {
+    if (!user || !encryptionKey) {
+      setRecentMemos([]);
+      return;
+    }
+
+    const fetchMemos = async () => {
+      try {
+        const memos = await getRecentMemos(user.uid, encryptionKey);
+        setRecentMemos(memos);
+      } catch (err) {
+        console.error("Failed to fetch recent memos:", err);
+      }
+    };
+
+    fetchMemos();
+  }, [user, encryptionKey]);
 
 
   // Single subscription for transactions — shared across Overview + Analytics
@@ -240,6 +264,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
   }, [transactions]);
 
+    const lastTransactionId = transactions.length > 0 ? transactions[transactions.length - 1].id : null;
+
   const monthsList = useMemo(() => {
     const now = new Date();
     const currentMonth = startOfMonth(now);
@@ -281,7 +307,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       return [{ value: format(now, "yyyy-MM"), label: format(now, "MMMM yyyy") }];
     }
-  }, [isFullHistoryLoaded, user?.metadata?.creationTime, transactions.length > 0 ? transactions[transactions.length - 1].id : null]);
+  }, [isFullHistoryLoaded, user?.metadata?.creationTime, lastTransactionId]);
 
   return (
     <DataContext.Provider value={{
@@ -306,7 +332,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setIsFullHistoryLoaded(true);
       },
       hasMore,
-      isFullHistoryLoaded
+      isFullHistoryLoaded,
+      recentMemos
     }}>
       {children}
     </DataContext.Provider>

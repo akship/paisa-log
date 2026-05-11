@@ -134,7 +134,7 @@ export default function AnalyticsHeader({
                       className="fixed inset-0 z-40"
                       onClick={() => setIsMonthPickerOpen(false)}
                     />
-                    <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-[#0a0a0b] border border-white/10 rounded-2xl shadow-2xl backdrop-blur-3xl z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                    <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-surface-container-low border border-white/10 rounded-2xl shadow-2xl backdrop-blur-3xl z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
                       <div className="max-h-64 overflow-y-auto custom-scrollbar">
                         {monthsList.map((m) => (
                           <button

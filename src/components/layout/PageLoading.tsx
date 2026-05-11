@@ -17,28 +17,36 @@ export default function PageLoading({
   isWarning,
   onBypass,
   message = "Syncing with cloud...",
-  errorReload = () => window.location.reload(),
+  errorReload,
 }: PageLoadingProps) {
+  const handleReload = () => {
+    if (errorReload) {
+      errorReload();
+    } else if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full space-y-8 animate-pulse p-4 md:p-0">
         {/* Skeleton Header */}
         <div className="h-16 w-1/3 bg-white/[0.03] rounded-3xl border border-white/5 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent skeleton-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent animate-shimmer" />
         </div>
 
         {/* Skeleton Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-32 glass-card rounded-3xl border border-white/5 relative overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent skeleton-shimmer" />
+               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent animate-shimmer" />
             </div>
           ))}
         </div>
 
         {/* Skeleton Main View */}
         <div className="h-[400px] glass-card rounded-[40px] border border-white/5 relative overflow-hidden">
-           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent skeleton-shimmer" />
+           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent animate-shimmer" />
            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
               <div className="h-12 w-12 rounded-2xl bg-white/[0.03] border border-white/5 animate-spin flex items-center justify-center">
                  <div className="h-1 w-1 rounded-full bg-primary shadow-glow-primary" />
@@ -46,16 +54,6 @@ export default function PageLoading({
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">{message}</p>
            </div>
         </div>
-
-        <style jsx>{`
-          .skeleton-shimmer {
-            animation: shimmer 2s infinite linear;
-          }
-          @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-          }
-        `}</style>
       </div>
     );
   }
@@ -74,7 +72,7 @@ export default function PageLoading({
               : error}
           </p>
           <button
-            onClick={errorReload}
+            onClick={handleReload}
             className="w-full bg-white text-background px-6 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all hover:scale-[1.02] active:scale-95 shadow-glow-white/10"
           >
             Reconnect System

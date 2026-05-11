@@ -83,7 +83,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
               {showCategoryFilter && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowCategoryFilter(false)} />
-                  <div className="absolute right-0 top-full mt-3 w-72 bg-[#0a0f1d]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute right-0 top-full mt-3 w-72 bg-surface-container-low/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200">
                     <div className="max-h-80 overflow-y-auto no-scrollbar flex flex-col gap-5">
                       <button
                         onClick={() => {
@@ -169,7 +169,7 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                 : "Your financial ledger is a clean slate. Begin your journey by adding a record."}
             </p>
 
-            <style jsx>{`
+            <style jsx global>{`
               .drop-shadow-glow {
                 filter: drop-shadow(0 0 10px rgba(132,173,255,0.3));
               }

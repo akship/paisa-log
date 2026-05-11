@@ -254,8 +254,8 @@ export const updateTransaction = async (transactionId: string, data: Partial<Tra
     updateData.v = 1;
 
     const encryptionPromises = [];
-    if (data.description) encryptionPromises.push(CryptoUtils.encryptString(data.description, encryptionKey).then(res => updateData.description = res));
-    if (data.category) encryptionPromises.push(CryptoUtils.encryptString(data.category, encryptionKey).then(res => updateData.category = res));
+    if (data.description !== undefined) encryptionPromises.push(CryptoUtils.encryptString(data.description, encryptionKey).then(res => updateData.description = res));
+    if (data.category !== undefined) encryptionPromises.push(CryptoUtils.encryptString(data.category, encryptionKey).then(res => updateData.category = res));
     if (data.amount !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(data.amount, encryptionKey).then(res => updateData.amount = res));
 
     await Promise.all(encryptionPromises);
@@ -281,8 +281,8 @@ export const bulkUpdateTransactions = async (
     if (encryptionKey) {
       updateData.isEncrypted = true;
       updateData.v = 1;
-      if (data.description) updateData.description = await CryptoUtils.encryptString(data.description, encryptionKey);
-      if (data.category) updateData.category = await CryptoUtils.encryptString(data.category, encryptionKey);
+      if (data.description !== undefined) updateData.description = await CryptoUtils.encryptString(data.description, encryptionKey);
+      if (data.category !== undefined) updateData.category = await CryptoUtils.encryptString(data.category, encryptionKey);
       if (data.amount !== undefined) updateData.amount = await CryptoUtils.encryptNumber(data.amount, encryptionKey);
     }
 
@@ -296,4 +296,53 @@ export const bulkUpdateTransactions = async (
 export const deleteTransaction = async (transactionId: string) => {
   const docRef = doc(db, TRANSACTIONS_COLLECTION, transactionId);
   await deleteDoc(docRef);
+};
+
+export const getRecentMemos = async (userId: string, encryptionKey: CryptoKey | null = null, months: number = 3): Promise<{ desc: string, cat: string, type: "income" | "expense" }[]> => {
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - months);
+
+  const q = query(
+    collection(db, TRANSACTIONS_COLLECTION),
+    where("user_id", "==", userId),
+    where("timestamp", ">=", Timestamp.fromDate(startDate)),
+    orderBy("timestamp", "desc")
+  );
+
+  const snapshot = await getDocs(q);
+  const memosMap = new Map<string, { desc: string, cat: string, type: "income" | "expense" }>();
+
+  const processPromises = snapshot.docs.map(async (d) => {
+    const data = d.data();
+    let description = data.description;
+    let category = data.category;
+    const type = data.type;
+
+    if (data.isEncrypted && encryptionKey) {
+      try {
+        const [decDesc, decCat] = await Promise.all([
+          CryptoUtils.decryptString(data.description, encryptionKey),
+          CryptoUtils.decryptString(data.category, encryptionKey)
+        ]);
+        description = decDesc;
+        category = decCat;
+      } catch (err) {
+        return;
+      }
+    } else if (data.isEncrypted) {
+      return;
+    }
+
+    if (description && description !== "[Locked Data]") {
+      const normalized = description.trim();
+      const key = `${normalized}_${type}`;
+      if (!memosMap.has(key)) {
+        memosMap.set(key, { desc: normalized, cat: category, type });
+      }
+    }
+  });
+
+  await Promise.all(processPromises);
+
+  return Array.from(memosMap.values());
 };

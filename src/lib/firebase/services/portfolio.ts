@@ -110,8 +110,8 @@ export const updatePortfolioItem = async (id: string, updates: Partial<Portfolio
     data.v = 1;
     
     const encryptionPromises = [];
-    if (updates.name) encryptionPromises.push(CryptoUtils.encryptString(updates.name, encryptionKey).then(res => data.name = res));
-    if (updates.category) encryptionPromises.push(CryptoUtils.encryptString(updates.category, encryptionKey).then(res => data.category = res));
+    if (updates.name !== undefined) encryptionPromises.push(CryptoUtils.encryptString(updates.name, encryptionKey).then(res => data.name = res));
+    if (updates.category !== undefined) encryptionPromises.push(CryptoUtils.encryptString(updates.category, encryptionKey).then(res => data.category = res));
     if (updates.amount !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(updates.amount, encryptionKey).then(res => data.amount = res));
     
     await Promise.all(encryptionPromises);
@@ -205,6 +205,36 @@ export const savePortfolioSnapshot = async (
   
   const res = await addDoc(docRef, data);
   return res.id;
+};
+
+export const updatePortfolioSnapshot = async (
+  id: string,
+  updates: Partial<PortfolioSnapshot>,
+  encryptionKey: CryptoKey | null = null
+) => {
+  const docRef = doc(db, PORTFOLIO_HISTORY_COLLECTION, id);
+  const data: any = { ...updates };
+
+  if (updates.timestamp) {
+    data.timestamp = Timestamp.fromDate(updates.timestamp);
+  }
+
+  if (encryptionKey) {
+    data.isEncrypted = true;
+    data.v = 1;
+
+    const encryptionPromises = [];
+    if (updates.totalNetWorth !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(updates.totalNetWorth, encryptionKey).then(res => data.totalNetWorth = res));
+    if (updates.liquid !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(updates.liquid, encryptionKey).then(res => data.liquid = res));
+    if (updates.investments !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(updates.investments, encryptionKey).then(res => data.investments = res));
+    if (updates.receivables !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(updates.receivables, encryptionKey).then(res => data.receivables = res));
+    if (updates.liabilities !== undefined) encryptionPromises.push(CryptoUtils.encryptNumber(updates.liabilities, encryptionKey).then(res => data.liabilities = res));
+    if (updates.items !== undefined) encryptionPromises.push(CryptoUtils.encryptString(JSON.stringify(updates.items), encryptionKey).then(res => data.items = res));
+
+    await Promise.all(encryptionPromises);
+  }
+
+  return updateDoc(docRef, data);
 };
 
 export const deletePortfolioSnapshot = async (snapshotId: string) => {

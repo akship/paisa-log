@@ -33,7 +33,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
   const [suggestions, setSuggestions] = useState<{ desc: string, cat: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const { transactions, categories: dataCategories } = useData();
+  const { transactions, categories: dataCategories, recentMemos } = useData();
 
   useEffect(() => {
     setMounted(true);
@@ -81,27 +81,13 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
     }
   }, [initialData, isOpen]);
 
-  // Generate suggestions from transactions history
+  // Generate suggestions from recent history (last 3 months)
   useEffect(() => {
     if (isOpen) {
-      const uniqueDescriptions = new Set<string>();
-      const sugg: { desc: string, cat: string }[] = [];
-
-      // Filter transactions by current type for domain-specific suggestions
-      const relevantTransactions = transactions.filter(t => t.type === type);
-
-      for (const tx of relevantTransactions) {
-        if (!tx.description || tx.description === "[Locked Data]") continue;
-        const normalizedDesc = tx.description.trim().toLowerCase();
-        if (!uniqueDescriptions.has(normalizedDesc)) {
-          uniqueDescriptions.add(normalizedDesc);
-          sugg.push({ desc: tx.description, cat: tx.category });
-        }
-        if (sugg.length >= 200) break; // Limit
-      }
+      const sugg = recentMemos.filter(m => m.type === type);
       setSuggestions(sugg);
     }
-  }, [isOpen, transactions, type]);
+  }, [isOpen, recentMemos, type]);
 
   if (!isOpen || !mounted) return null;
 
@@ -158,13 +144,13 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto pt-10 sm:pt-20">
       {/* Dynamic Backdrop */}
-      <div
-        className="fixed inset-0 bg-[#060912]/85 backdrop-blur-xl transition-opacity duration-500"
-        onClick={onClose}
+      <div 
+        className="fixed inset-0 bg-background/85 backdrop-blur-xl transition-opacity duration-500" 
+        onClick={onClose} 
       />
 
       {/* Main Glass Shell */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-[#0c1222]/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] transition-all transform animate-in fade-in zoom-in-95 slide-in-from-top-10 duration-500 mb-10">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-surface-container/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] transition-all transform animate-in fade-in zoom-in-95 slide-in-from-top-10 duration-500 mb-10">
 
         {/* Prismatic Shine Overlay */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
@@ -256,7 +242,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
                 />
 
                 {showSuggestions && filteredSuggestions.length > 0 && (
-                  <div className="absolute z-20 w-full mt-2 bg-[#0c1222]/90 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl">
+                  <div className="absolute z-20 w-full mt-2 bg-surface-container/90 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl">
                     {filteredSuggestions.map((s, idx) => (
                       <button
                         key={idx}
@@ -289,7 +275,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full rounded-2xl bg-white/[0.02] border border-white/5 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest text-on-surface focus:outline-none focus:border-primary/20 focus:bg-white/[0.04] transition-all appearance-none cursor-pointer"
                   >
-                    {sortedCategories.map(c => <option key={c} value={c} className="bg-[#060912]">{c}</option>)}
+                    {sortedCategories.map(c => <option key={c} value={c} className="bg-background">{c}</option>)}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-20">
                     <Plus className="h-3 w-3 rotate-45" />

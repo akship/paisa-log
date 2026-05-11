@@ -105,7 +105,7 @@ export function TotalSpendsCard({ activeCategoryId, expenseTotal, expensesByCate
                 <p className="text-xl font-black font-display text-white">{formatINR(expenseTotal)}</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={200}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={100}>
               <PieChart>
                 <Pie
                   data={Object.entries(expensesByCategory).map(([name, value], idx) => ({ name, value, color: PRISM_COLORS[idx % PRISM_COLORS.length] }))}

@@ -60,7 +60,7 @@ export const CustomTooltip = ({ active, payload, total }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="glass-card border-white/10 p-4 rounded-2xl shadow-2xl bg-[#060912]/90 backdrop-blur-xl animate-in fade-in zoom-in duration-200">
+      <div className="glass-card border-white/10 p-4 rounded-2xl shadow-2xl bg-background/90 backdrop-blur-xl animate-in fade-in zoom-in duration-200">
         <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mb-1">{data.name}</p>
         <div className="flex items-baseline gap-2">
           <p className="text-white font-display text-2xl font-bold tracking-tight">
@@ -138,7 +138,7 @@ export default function SpendingChart({ title, chartData, expenseTotal, hasSavin
 
       <div className="w-full h-[460px] relative mt-4">
         {isXl && (
-          <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={400} minWidth={0}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={400} minWidth={100}>
             <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <Tooltip content={<CustomTooltip total={expenseTotal} />} cursor={false} />
             <Pie

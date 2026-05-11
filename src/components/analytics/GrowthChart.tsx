@@ -30,7 +30,7 @@ export default function GrowthChart({ data }: GrowthChartProps) {
     if (active && payload && payload.length) {
       const entry = payload[0].payload;
       return (
-        <div className="glass-card border-white/10 p-5 rounded-3xl shadow-2xl bg-[#060912]/95 backdrop-blur-2xl animate-in fade-in zoom-in duration-200 min-w-[200px]">
+      <div className="glass-card border-white/10 p-5 rounded-3xl shadow-2xl bg-background/95 backdrop-blur-2xl animate-in fade-in zoom-in duration-200 min-w-[200px]">
           <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mb-3">
             {entry.monthYear}
           </p>
@@ -96,7 +96,7 @@ export default function GrowthChart({ data }: GrowthChartProps) {
 
   return (
     <div className="w-full h-[400px] md:h-[500px] mt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 min-w-0 min-h-[300px]">
-      <ResponsiveContainer width="100%" height="100%" debounce={100} minHeight={300} minWidth={0}>
+      <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={100}>
         <AreaChart data={sortedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">

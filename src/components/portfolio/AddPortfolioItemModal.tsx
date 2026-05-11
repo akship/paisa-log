@@ -104,12 +104,12 @@ export default function AddPortfolioItemModal({ isOpen, onClose, initialData }: 
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto pt-10 sm:pt-20">
       {/* Dynamic Backdrop */}
       <div 
-        className="fixed inset-0 bg-[#060912]/85 backdrop-blur-xl transition-opacity duration-500"
+        className="fixed inset-0 bg-background/85 backdrop-blur-xl transition-opacity duration-500"
         onClick={onClose}
       />
       
       {/* Modal Shell */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-[#0c1222]/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] transition-all transform animate-in fade-in zoom-in-95 slide-in-from-top-10 duration-500 mb-10">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-surface-container/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] transition-all transform animate-in fade-in zoom-in-95 slide-in-from-top-10 duration-500 mb-10">
         
         {/* Prismatic Shine Overlay */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">

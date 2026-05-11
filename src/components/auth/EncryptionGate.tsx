@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 
 export default function EncryptionGate({ children }: { children: React.ReactNode }) {
   const { user, preferences, encryptionKey, setEncryptionKey, loading: authLoading, isVaultLoading } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
   const [pin, setPin] = useState("");
   const [isDeriving, setIsDeriving] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -18,6 +19,17 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [isThrottled, setIsThrottled] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // During SSR/Prerendering, we must render children to allow the Next.js 
+  // pre-renderer to validate nested routes (e.g., for unstable_instant).
+  // The inner components already handle their own mounting skeletons.
+  if (!isMounted) {
+    return <>{children}</>;
+  }
 
   // If auth or vault sync is still loading, show a neutral loader
   if (authLoading || isVaultLoading) {
@@ -88,9 +100,11 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
         await startMigration(key);
       }
     } catch (err: any) {
-      console.error("Vault unlock failed:", err);
-      
       const isIncorrectPin = err.message === "Invalid PIN";
+      
+      if (!isIncorrectPin) {
+        console.error("Vault unlock failed:", err);
+      }
       
       if (isIncorrectPin) {
         setAttempts(prev => prev + 1);
@@ -144,7 +158,7 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#060912]/85 backdrop-blur-xl animate-in fade-in duration-700">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/85 backdrop-blur-xl animate-in fade-in duration-700">
       <div className="glass-card max-w-md w-full p-8 md:p-12 border-primary/20 shadow-2xl">
         <div className="flex flex-col items-center text-center space-y-6">
           <div className="p-4 bg-primary/10 rounded-3xl border border-primary/20 shadow-glow-primary">
