@@ -1,0 +1,101 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X, AlertTriangle } from "lucide-react";
+import { useScrollLock } from "@/lib/hooks/useScrollLock";
+import { Transaction } from "@/lib/firebase/firestore";
+import { formatINR } from "@/lib/utils";
+import { format } from "date-fns";
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  transaction: Transaction | null;
+  loading?: boolean;
+}
+
+export default function DeleteConfirmModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  transaction,
+  loading = false
+}: Props) {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useScrollLock(isOpen);
+
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto pt-20">
+      {/* Dynamic Backdrop */}
+      <div 
+        className="fixed inset-0 bg-background/85 backdrop-blur-xl transition-opacity duration-500"
+        onClick={onClose}
+      />
+      
+      {/* Modal Shell */}
+      <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-surface-container/90 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-[60px] p-6 text-center transition-all transform animate-in zoom-in-95 fade-in duration-300">
+        
+        <div className="bg-tertiary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 ring-1 ring-tertiary/20">
+          <AlertTriangle className="h-8 w-8 text-tertiary" />
+        </div>
+
+        <h2 className="text-xl font-bold text-on-surface mb-2 font-display tracking-tight">Delete Transaction?</h2>
+        
+        {transaction && (
+          <div className="mb-8 p-4 bg-white/5 rounded-2xl border border-white/5 text-left space-y-3">
+            <div className="flex justify-between items-start gap-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20 shrink-0 mt-1">Item</span>
+              <span className="text-xs font-bold text-on-surface text-right truncate">
+                {transaction.description || transaction.category}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Amount</span>
+              <span className="text-sm font-black font-display text-tertiary tracking-tight">
+                {formatINR(transaction.amount)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Category</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 bg-white/5 px-2 py-1 rounded-lg">
+                {transaction.category}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <p className="text-on-surface-variant/60 text-[10px] font-bold uppercase tracking-widest mb-8 leading-relaxed px-4">
+          This action cannot be undone. This record will be permanently removed.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="w-full bg-tertiary/10 border border-tertiary/20 hover:bg-tertiary/20 text-tertiary font-black uppercase tracking-[0.2em] text-[10px] py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+          >
+            {loading ? "Deleting..." : "Confirm Deletion"}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="w-full bg-white/5 border border-white/5 hover:bg-white/10 text-on-surface-variant font-black uppercase tracking-[0.2em] text-[10px] py-4 rounded-2xl transition-all active:scale-95"
+          >
+            Keep Record
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}

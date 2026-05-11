@@ -1,0 +1,4 @@
+# This file defines the individuals/teams that own certain parts of the codebase.
+# For more info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-codeowners
+
+*       @akship

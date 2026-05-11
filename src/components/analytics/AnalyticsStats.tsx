@@ -1,0 +1,155 @@
+"use client";
+import { useState, useEffect } from "react";
+
+import { TrendingUp, ArrowRight, IndianRupee, PieChart as PieChartIcon, Activity } from "lucide-react";
+import { motion } from "framer-motion";
+import { formatINR } from "@/lib/utils";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PRISM_COLORS } from "@/lib/constants";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+
+interface SavingsPoolCardProps {
+  savingsTotal: number;
+  incomeTotal: number;
+  expenseTotal: number;
+}
+
+export function SavingsPoolCard({ savingsTotal, incomeTotal, expenseTotal }: SavingsPoolCardProps) {
+  return (
+    <motion.div 
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="glass-card p-5 md:p-6 rounded-3xl border-white/5 bg-white/[0.01] overflow-hidden relative group cursor-default transition-all duration-500 hover:border-emerald-500/20"
+    >
+      <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+      <motion.div 
+        className="absolute right-[10%] bottom-[8%] pointer-events-none"
+        initial={{ opacity: 0.03, scale: 1, rotate: 0 }}
+        whileHover={{ opacity: 0.08, scale: 1.25, rotate: 10 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <TrendingUp className={`h-32 w-32 ${savingsTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`} />
+      </motion.div>
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className={`h-1.5 w-1.5 rounded-full ${savingsTotal >= 0 ? 'bg-emerald-400' : 'bg-rose-400 shadow-[0_0_10px_#f43f5e]'}`} />
+          <span className="text-[10px] md:text-xs font-black text-white/40 uppercase tracking-[0.3em]">Net Savings</span>
+        </div>
+        <TrendingUp className={`h-4 w-4 ${savingsTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-20 group-hover:opacity-100 transition-all group-hover:scale-110`} />
+      </div>
+      <h3 className="text-2xl font-black font-display text-white tracking-tighter relative z-10">Savings Pool</h3>
+      <div className="flex items-baseline gap-2 mt-1 relative z-10">
+        <p className={`text-xl font-black ${savingsTotal >= 0 ? 'text-emerald-400/60 group-hover:text-emerald-400 transition-colors' : 'text-rose-400/60 group-hover:text-rose-400 transition-colors'}`}>
+          {formatINR(savingsTotal)}
+        </p>
+        <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md group-hover:bg-white/10 transition-colors">
+          {expenseTotal > 0 ? ((savingsTotal / incomeTotal) * 100).toFixed(0) : '0'}%
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+interface TotalSpendsCardProps {
+  activeCategoryId: string;
+  expenseTotal: number;
+  expensesByCategory: Record<string, number>;
+  onSelect: () => void;
+}
+
+export function TotalSpendsCard({ activeCategoryId, expenseTotal, expensesByCategory, onSelect }: TotalSpendsCardProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  const isSelected = activeCategoryId === 'total';
+  const isXl = useMediaQuery("(min-width: 1280px)");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  return (
+    <motion.div 
+      onClick={onSelect}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className={`glass-card rounded-3xl border-white/5 cursor-pointer group transition-all duration-500 overflow-hidden relative ${isSelected ? 'bg-white/[0.08] border-white/20 shadow-2xl translate-y--1' : 'bg-white/[0.01] hover:bg-white/[0.03]'}`}
+    >
+      <motion.div 
+        className="absolute right-[10%] bottom-[8%] pointer-events-none"
+        initial={{ opacity: 0.03, scale: 1, rotate: 0 }}
+        whileHover={{ opacity: 0.08, scale: 1.25, rotate: -10 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <PieChartIcon className="h-32 w-32 text-blue-400" />
+      </motion.div>
+      <div className="p-5 md:p-6 relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-blue-400 shadow-[0_0_10px_#3b82f6]' : 'bg-white/20'}`} />
+            <span className="text-[10px] md:text-xs font-black text-white/40 uppercase tracking-[0.3em]">Aggregate View</span>
+          </div>
+          <ArrowRight className={`h-4 w-4 transition-all duration-500 ${isSelected ? 'text-blue-400 translate-x-1 opacity-100' : 'text-white/10 group-hover:opacity-40'}`} />
+        </div>
+        <h3 className="text-2xl font-black font-display text-white tracking-tighter">Total Spends</h3>
+        <div className="flex items-baseline gap-2 mt-1">
+          <p className="text-xl font-black text-white/40 group-hover:text-white transition-colors">{formatINR(expenseTotal)}</p>
+        </div>
+      </div>
+
+      {isSelected && !isXl && isMounted && (
+        <div className="xl:hidden px-8 pb-8 animate-in slide-in-from-top-4 duration-500">
+          <div className="h-px bg-white/5 mb-8" />
+          <div className="h-[280px] w-full relative">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Total</p>
+                <p className="text-xl font-black font-display text-white">{formatINR(expenseTotal)}</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={100}>
+              <PieChart>
+                <Pie
+                  data={Object.entries(expensesByCategory).map(([name, value], idx) => ({ name, value, color: PRISM_COLORS[idx % PRISM_COLORS.length] }))}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="65%"
+                  outerRadius="85%"
+                  paddingAngle={4}
+                  dataKey="value"
+                  stroke="none"
+                  animationDuration={1000}
+                >
+                  {Object.entries(expensesByCategory).map(([cat, val], index) => (
+                    <Cell 
+                      key={`cell-total-mini-${index}`} 
+                      fill={PRISM_COLORS[index % PRISM_COLORS.length]}
+                      style={{ filter: `drop-shadow(0 0 10px ${PRISM_COLORS[index % PRISM_COLORS.length]}20)` }}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+interface ValuationCardProps {
+  label: string;
+  value: number;
+  subtitle: string;
+  isMain?: boolean;
+}
+
+export function ValuationCard({ label, value, subtitle, isMain }: ValuationCardProps) {
+  return (
+    <div className="glass-card p-6 md:p-10 rounded-[2.5rem] border-white/5">
+      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-4">{label}</p>
+      <p className={`text-4xl font-black font-display tracking-tighter ${isMain ? 'text-white' : 'text-white/40'}`}>
+        {formatINR(value)}
+      </p>
+      <p className={`text-xs font-bold mt-2 ${isMain ? 'text-white/40 text-shadow-glow-primary' : 'text-white/20'}`}>{subtitle}</p>
+    </div>
+  );
+}
