@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, AlertTriangle } from "lucide-react";
 import { useScrollLock } from "@/lib/hooks/useScrollLock";
+import { Transaction } from "@/lib/firebase/firestore";
+import { formatINR } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  title?: string;
-  description?: string;
+  transaction: Transaction | null;
   loading?: boolean;
 }
 
@@ -18,8 +20,7 @@ export default function DeleteConfirmModal({
   isOpen, 
   onClose, 
   onConfirm, 
-  title = "Delete Transaction?", 
-  description = "This action cannot be undone. This will permanently remove the record from your history.",
+  transaction,
   loading = false
 }: Props) {
   const [mounted, setMounted] = useState(false);
@@ -48,9 +49,33 @@ export default function DeleteConfirmModal({
           <AlertTriangle className="h-8 w-8 text-tertiary" />
         </div>
 
-        <h2 className="text-xl font-bold text-on-surface mb-2 font-display tracking-tight">{title}</h2>
-        <p className="text-on-surface-variant/60 text-[11px] mb-8 leading-relaxed px-4">
-          {description}
+        <h2 className="text-xl font-bold text-on-surface mb-2 font-display tracking-tight">Delete Transaction?</h2>
+        
+        {transaction && (
+          <div className="mb-8 p-4 bg-white/5 rounded-2xl border border-white/5 text-left space-y-3">
+            <div className="flex justify-between items-start gap-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20 shrink-0 mt-1">Item</span>
+              <span className="text-xs font-bold text-on-surface text-right truncate">
+                {transaction.description || transaction.category}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Amount</span>
+              <span className="text-sm font-black font-display text-tertiary tracking-tight">
+                {formatINR(transaction.amount)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Category</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 bg-white/5 px-2 py-1 rounded-lg">
+                {transaction.category}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <p className="text-on-surface-variant/60 text-[10px] font-bold uppercase tracking-widest mb-8 leading-relaxed px-4">
+          This action cannot be undone. This record will be permanently removed.
         </p>
 
         <div className="flex flex-col gap-3">

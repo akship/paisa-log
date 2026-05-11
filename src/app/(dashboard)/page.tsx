@@ -103,13 +103,14 @@ export default function OverviewPage() {
         initialData={selectedTransaction}
       />
 
-      <DeleteConfirmModal
+          <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setSelectedTransaction(null);
         }}
         onConfirm={confirmDelete}
+        transaction={selectedTransaction}
         loading={isDeleting}
       />
     </div>
