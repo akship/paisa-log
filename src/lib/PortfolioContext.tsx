@@ -32,6 +32,8 @@ interface PortfolioContextState {
   // Snapshot Status
   snapshotsThisMonth: number;
   canTakeSnapshot: boolean;
+  daysUntilNextSnapshot: number; // 0 when allowed, >0 shows cooldown remaining
+  latestSnapshot: PortfolioSnapshot | null; // most-recent valid snapshot (for update)
   validHistory: PortfolioSnapshot[];
   growthData: any[]; // Combined history + live data for charts
 }
@@ -55,6 +57,8 @@ const PortfolioContext = createContext<PortfolioContextState>({
   overallGrowth: 0,
   snapshotsThisMonth: 0,
   canTakeSnapshot: false,
+  daysUntilNextSnapshot: 0,
+  latestSnapshot: null,
   validHistory: [],
   growthData: [],
 });
@@ -134,12 +138,16 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     return calculatePortfolioTotals(portfolioItems);
   }, [portfolioItems]);
 
+  const SNAPSHOT_COOLDOWN_DAYS = 15;
+
   const metrics = useMemo(() => {
     if (portfolioHistory.length === 0) {
       return {
         validHistory: [],
         snapshotsThisMonth: 0,
         canTakeSnapshot: true,
+        daysUntilNextSnapshot: 0,
+        latestSnapshot: null,
         momChange: 0,
         momPercent: 0,
         overallGrowth: 0,
@@ -153,7 +161,25 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     const sortedHistory = [...portfolioHistory].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
     const validHistory = sortedHistory.filter(s => s.totalNetWorth !== -1);
 
-    // Calc month snapshots efficiently
+    // --- 15-day cooldown logic ---
+    // Find the most-recent snapshot (by actual timestamp) among valid ones
+    const latestSnapshot = validHistory.length > 0
+      ? validHistory.reduce((newest, s) => {
+          const t = s.timestamp instanceof Date ? s.timestamp.getTime() : new Date(s.timestamp).getTime();
+          const nt = newest.timestamp instanceof Date ? newest.timestamp.getTime() : new Date(newest.timestamp).getTime();
+          return t > nt ? s : newest;
+        })
+      : null;
+
+    const now = Date.now();
+    const latestTs = latestSnapshot?.timestamp
+      ? (latestSnapshot.timestamp instanceof Date ? latestSnapshot.timestamp.getTime() : new Date(latestSnapshot.timestamp as any).getTime())
+      : 0;
+    const daysSinceLatest = latestTs > 0 ? Math.floor((now - latestTs) / (1000 * 60 * 60 * 24)) : SNAPSHOT_COOLDOWN_DAYS;
+    const canTakeSnapshot = daysSinceLatest >= SNAPSHOT_COOLDOWN_DAYS;
+    const daysUntilNextSnapshot = canTakeSnapshot ? 0 : SNAPSHOT_COOLDOWN_DAYS - daysSinceLatest;
+
+    // Count this-month snapshots (kept for informational use)
     let snapshotsThisMonth = 0;
     let previousSnapshot = null;
     const monthlyMap: Record<string, any> = {};
@@ -163,7 +189,6 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       if (s.monthYear === currentMonthYear) {
         snapshotsThisMonth++;
       } else {
-        // Keep track of the most recent non-current-month snapshot
         previousSnapshot = s;
       }
       if (s.totalNetWorth !== -1) {
@@ -202,7 +227,9 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     return {
       validHistory,
       snapshotsThisMonth,
-      canTakeSnapshot: snapshotsThisMonth < 2,
+      canTakeSnapshot,
+      daysUntilNextSnapshot,
+      latestSnapshot,
       momChange,
       momPercent,
       overallGrowth,

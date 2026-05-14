@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PortfolioSnapshot, PortfolioSnapshotItem, savePortfolioSnapshot } from "@/lib/firebase/firestore";
+import { PortfolioSnapshot, PortfolioSnapshotItem, updatePortfolioSnapshot } from "@/lib/firebase/firestore";
 import { formatINR } from "@/lib/utils";
 import { X, Save, Plus, Trash2, ChevronDown, ChevronUp, Calculator } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -76,11 +76,13 @@ export default function EditSnapshotModal({ isOpen, onClose, snapshot, encryptio
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!snapshot.id) {
+      toast.error("Cannot update: snapshot has no ID");
+      return;
+    }
     setIsSaving(true);
     try {
-      await savePortfolioSnapshot({
-        user_id: snapshot.user_id,
-        monthYear: snapshot.monthYear,
+      await updatePortfolioSnapshot(snapshot.id, {
         totalNetWorth,
         liquid: liquidTotal,
         investments: investmentsTotal,

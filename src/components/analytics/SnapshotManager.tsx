@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import EditSnapshotModal from "./EditSnapshotModal";
 import { usePortfolio } from "@/lib/PortfolioContext";
 import { Loader2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface Props {
   history: PortfolioSnapshot[];
@@ -66,16 +67,23 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
                       {isLocked ? <ShieldAlert className="h-6 w-6" /> : <History className="h-6 w-6" />}
                    </div>
                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="h-3 w-3 text-white/20" />
-                        <span className="text-xs font-black text-white tracking-widest uppercase">{s.monthYear}</span>
-                      </div>
-                      {isLocked ? (
-                        <p className="text-[10px] font-bold text-rose-500/60 uppercase tracking-widest">Encryption Key Mismatch</p>
-                      ) : (
-                        <p className="text-[10px] font-medium text-white/40 uppercase tracking-widest">Logged: {formatINR(s.totalNetWorth)}</p>
-                      )}
-                   </div>
+                       <div className="flex items-center gap-2 mb-1">
+                         <Calendar className="h-3 w-3 text-white/20" />
+                         <span className="text-xs font-black text-white tracking-widest uppercase">
+                           {s.timestamp ? format(new Date(s.timestamp), "ddMMMyy").toUpperCase() : s.monthYear}
+                         </span>
+                       </div>
+                       {isLocked ? (
+                         <p className="text-[10px] font-bold text-rose-500/60 uppercase tracking-widest">Encryption Key Mismatch</p>
+                       ) : (
+                         <p className="text-[10px] font-medium text-white/40 uppercase tracking-widest">Logged: {formatINR(s.totalNetWorth)}</p>
+                       )}
+                       {s.timestamp && (
+                         <p className="text-[9px] font-bold text-white/20 mt-0.5">
+                           {format(new Date(s.timestamp), "d MMM yyyy, h:mm a")}
+                         </p>
+                       )}
+                    </div>
                 </div>
   
                 {!isLocked && (

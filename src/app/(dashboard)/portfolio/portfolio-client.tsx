@@ -5,11 +5,12 @@ import { useAuth } from "@/lib/firebase/auth";
 import { usePortfolio } from "@/lib/PortfolioContext";
 import { 
   savePortfolioSnapshot,
+  updatePortfolioSnapshot,
   PortfolioItem, 
   PortfolioCategoryGroup,
 } from "@/lib/firebase/firestore";
 import { formatINR } from "@/lib/utils";
-import { Wallet, ShieldCheck, Camera, TrendingUp } from "lucide-react";
+import { Wallet, ShieldCheck, Camera, TrendingUp, RefreshCw, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import { motion } from "framer-motion";
 import PageHeader from "@/components/layout/PageHeader";
 import PortfolioCategoryCard from "@/components/portfolio/PortfolioCategoryCard";
 import AddPortfolioItemModal from "@/components/portfolio/AddPortfolioItemModal";
+import UpdateSnapshotConfirmationModal from "@/components/portfolio/UpdateSnapshotConfirmationModal";
 import PageLoading from "@/components/layout/PageLoading";
 
 function PortfolioContent() {
@@ -31,14 +33,18 @@ function PortfolioContent() {
     receivables,
     liabilities,
     canTakeSnapshot,
+    daysUntilNextSnapshot,
+    latestSnapshot,
   } = usePortfolio();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState(false);
 
   useEffect(() => {
     loadPortfolioData();
   }, [loadPortfolioData]);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [updatingSnapshot, setUpdatingSnapshot] = useState(false);
 
   // Handle Global FAB Action
   useEffect(() => {
@@ -87,6 +93,42 @@ function PortfolioContent() {
       console.error("Snapshot save error:", err);
     } finally {
       setSavingSnapshot(false);
+    }
+  };
+
+  const handleUpdateLatestSnapshot = async () => {
+    if (!user || !encryptionKey || !latestSnapshot?.id) {
+      toast.error("Cannot update snapshot — missing credentials or no existing snapshot.");
+      return;
+    }
+    setUpdatingSnapshot(true);
+    try {
+      const snapshotItems = {
+        LIQUID: groupItems("LIQUID").map(i => ({ name: i.name, amount: i.amount })),
+        INVESTMENTS: groupItems("INVESTMENTS").map(i => ({ name: i.name, amount: i.amount })),
+        RECEIVABLES: groupItems("RECEIVABLES").map(i => ({ name: i.name, amount: i.amount })),
+        LIABILITIES: groupItems("LIABILITIES").map(i => ({ name: i.name, amount: i.amount })),
+      };
+      await updatePortfolioSnapshot(
+        latestSnapshot.id,
+        {
+          totalNetWorth: netWorth,
+          liquid,
+          investments,
+          receivables,
+          liabilities,
+          items: snapshotItems,
+          timestamp: new Date(),
+        },
+        encryptionKey
+      );
+      toast.success("Latest snapshot updated with current values");
+      setIsUpdateConfirmOpen(false);
+    } catch (err: any) {
+      toast.error("Failed to update snapshot: " + (err.message || "Unknown error"));
+      console.error("Snapshot update error:", err);
+    } finally {
+      setUpdatingSnapshot(false);
     }
   };
 
@@ -154,6 +196,24 @@ function PortfolioContent() {
                   {savingSnapshot ? "Saving..." : "Log Snapshot"}
                 </button>
               )}
+              {!canTakeSnapshot && latestSnapshot && items.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <button
+                    onClick={() => setIsUpdateConfirmOpen(true)}
+                    disabled={updatingSnapshot}
+                    className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] hover:bg-blue-500/20 transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${updatingSnapshot ? 'animate-spin' : ''}`} />
+                    {updatingSnapshot ? "Updating..." : "Update Latest"}
+                  </button>
+                  <div className="flex items-center justify-center gap-1.5 opacity-60">
+                    <Clock className="h-2.5 w-2.5 text-white/30" />
+                    <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">
+                      New snapshot in {daysUntilNextSnapshot}d
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           }
         />
@@ -204,6 +264,20 @@ function PortfolioContent() {
           setEditingItem(null);
         }} 
         initialData={editingItem} 
+      />
+      <UpdateSnapshotConfirmationModal
+        isOpen={isUpdateConfirmOpen}
+        onClose={() => setIsUpdateConfirmOpen(false)}
+        onConfirm={handleUpdateLatestSnapshot}
+        loading={updatingSnapshot}
+        latestSnapshot={latestSnapshot}
+        currentValues={{
+          netWorth,
+          liquid,
+          investments,
+          receivables,
+          liabilities
+        }}
       />
     </>
   );

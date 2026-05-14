@@ -15,22 +15,35 @@ import { formatINR } from "@/lib/utils";
 import { PortfolioSnapshot } from "@/lib/firebase/firestore";
 import { format } from "date-fns";
 
+type ChartEntry = PortfolioSnapshot & { delta: number | null; pct: number | null };
+
 interface GrowthChartProps {
   data: PortfolioSnapshot[];
 }
 
 export default function GrowthChart({ data }: GrowthChartProps) {
   // Sort data by timestamp and filter out un-decryptable snapshots
-  const sortedData = [...data]
+  const rawSorted = [...data]
     .filter(s => s.totalNetWorth !== -1)
     .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+
+  // Enrich each point with delta / pct vs. previous snapshot
+  const sortedData: ChartEntry[] = rawSorted.map((s, i) => {
+    if (i === 0) return { ...s, delta: null, pct: null };
+    const prev = rawSorted[i - 1].totalNetWorth;
+    const delta = s.totalNetWorth - prev;
+    const pct = prev !== 0 ? (delta / prev) * 100 : null;
+    return { ...s, delta, pct };
+  });
 
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const entry = payload[0].payload;
+      const entry: ChartEntry = payload[0].payload;
+      const isUp = entry.delta !== null && entry.delta >= 0;
+      const deltaColor = entry.delta === null ? '' : isUp ? 'text-emerald-400' : 'text-rose-400';
       return (
-      <div className="glass-card border-white/10 p-5 rounded-3xl shadow-2xl bg-background/95 backdrop-blur-2xl animate-in fade-in zoom-in duration-200 min-w-[200px]">
+      <div className="glass-card border-white/10 p-5 rounded-3xl shadow-2xl bg-background/95 backdrop-blur-2xl animate-in fade-in zoom-in duration-200 min-w-[220px]">
           <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mb-3">
             {entry.monthYear}
           </p>
@@ -40,6 +53,20 @@ export default function GrowthChart({ data }: GrowthChartProps) {
               <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Net Worth</span>
               <span className="text-blue-400 font-display font-black tracking-tight">{formatINR(entry.totalNetWorth)}</span>
             </div>
+
+            {entry.delta !== null && entry.pct !== null && (
+              <div className={`flex items-center justify-between gap-4 px-3 py-2 rounded-xl ${isUp ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
+                <span className="text-[9px] text-white/30 font-black uppercase tracking-widest">vs prev</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-black ${deltaColor}`}>
+                    {isUp ? '▲' : '▼'} {formatINR(Math.abs(entry.delta))}
+                  </span>
+                  <span className={`text-[10px] font-black ${deltaColor} opacity-70`}>
+                    ({isUp ? '+' : ''}{entry.pct.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+            )}
             
             <div className="h-px bg-white/5" />
             
@@ -66,6 +93,33 @@ export default function GrowthChart({ data }: GrowthChartProps) {
       );
     }
     return null;
+  };
+
+  // Custom dot that shows % change label above each data point (skip first)
+  const CustomDot = (props: any) => {
+    const { cx, cy, payload } = props as { cx: number; cy: number; payload: ChartEntry };
+    if (payload.pct === null) {
+      return <circle cx={cx} cy={cy} r={4} fill="#3b82f6" stroke="rgba(59,130,246,0.3)" strokeWidth={6} />;
+    }
+    const isUp = payload.pct >= 0;
+    const label = `${isUp ? '+' : ''}${payload.pct.toFixed(1)}%`;
+    const color = isUp ? '#34d399' : '#f87171';
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={4} fill="#3b82f6" stroke="rgba(59,130,246,0.3)" strokeWidth={6} />
+        <text
+          x={cx}
+          y={cy - 14}
+          textAnchor="middle"
+          fontSize={9}
+          fontWeight={800}
+          fill={color}
+          style={{ letterSpacing: '0.04em' }}
+        >
+          {label}
+        </text>
+      </g>
+    );
   };
 
   const [isMounted, setIsMounted] = useState(false);
@@ -129,6 +183,8 @@ export default function GrowthChart({ data }: GrowthChartProps) {
             fill="url(#colorNetWorth)" 
             animationDuration={2500}
             style={{ filter: 'drop-shadow(0 0 15px rgba(59, 130, 246, 0.3))' }}
+            dot={<CustomDot />}
+            activeDot={{ r: 6, fill: '#3b82f6', stroke: 'rgba(59,130,246,0.4)', strokeWidth: 8 }}
           />
         </AreaChart>
       </ResponsiveContainer>
