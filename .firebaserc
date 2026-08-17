@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "paisa-log"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

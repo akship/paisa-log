@@ -21,6 +21,8 @@ import AddPortfolioItemModal from "@/components/portfolio/AddPortfolioItemModal"
 import UpdateSnapshotConfirmationModal from "@/components/portfolio/UpdateSnapshotConfirmationModal";
 import PageLoading from "@/components/layout/PageLoading";
 
+import { useModal } from "@/lib/ModalContext";
+
 function PortfolioContent() {
   const { user, encryptionKey } = useAuth();
   const { 
@@ -36,22 +38,22 @@ function PortfolioContent() {
     daysUntilNextSnapshot,
     latestSnapshot,
   } = usePortfolio();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const {
+    isAddPortfolioOpen,
+    editingPortfolioItem,
+    openAddPortfolio,
+    closeAddPortfolio,
+  } = useModal();
+
   const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState(false);
 
   useEffect(() => {
     loadPortfolioData();
   }, [loadPortfolioData]);
-  const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
+
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [updatingSnapshot, setUpdatingSnapshot] = useState(false);
-
-  // Handle Global FAB Action
-  useEffect(() => {
-    const handleOpenModal = () => setIsModalOpen(true);
-    window.addEventListener('pl-open-add-portfolio', handleOpenModal);
-    return () => window.removeEventListener('pl-open-add-portfolio', handleOpenModal);
-  }, []);
 
   const currentMonthYear = format(new Date(), "yyyy-MM");
 
@@ -133,13 +135,11 @@ function PortfolioContent() {
   };
 
   const handleEdit = (item: PortfolioItem) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
+    openAddPortfolio(item.categoryGroup, item);
   };
 
   const handleAdd = (group?: PortfolioCategoryGroup) => {
-    setEditingItem(null);
-    setIsModalOpen(true);
+    openAddPortfolio(group, null);
   };
 
   if (loading) {
@@ -258,12 +258,9 @@ function PortfolioContent() {
       </div>
 
       <AddPortfolioItemModal 
-        isOpen={isModalOpen} 
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingItem(null);
-        }} 
-        initialData={editingItem} 
+        isOpen={isAddPortfolioOpen} 
+        onClose={closeAddPortfolio} 
+        initialData={editingPortfolioItem} 
       />
       <UpdateSnapshotConfirmationModal
         isOpen={isUpdateConfirmOpen}

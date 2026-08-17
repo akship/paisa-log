@@ -201,7 +201,8 @@ export default function EditSnapshotModal({ isOpen, onClose, snapshot, encryptio
                           <button 
                             type="button"
                             onClick={() => handleRemoveItem(cat.id, idx)}
-                            className="p-2.5 rounded-xl bg-rose-500/5 text-rose-500/40 hover:text-rose-500 hover:bg-rose-500/20 transition-all"
+                            aria-label={`Remove ${item.name || 'item'}`}
+                            className="p-2.5 rounded-xl bg-rose-500/5 text-rose-500/40 hover:text-rose-500 hover:bg-rose-500/20 transition-all cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

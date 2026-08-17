@@ -298,15 +298,12 @@ export const deleteTransaction = async (transactionId: string) => {
   await deleteDoc(docRef);
 };
 
-export const getRecentMemos = async (userId: string, encryptionKey: CryptoKey | null = null, months: number = 3): Promise<{ desc: string, cat: string, type: "income" | "expense" }[]> => {
-  const startDate = new Date();
-  startDate.setMonth(startDate.getMonth() - months);
-
+export const getRecentMemos = async (userId: string, encryptionKey: CryptoKey | null = null, limitCount: number = 100): Promise<{ desc: string, cat: string, type: "income" | "expense" }[]> => {
   const q = query(
     collection(db, TRANSACTIONS_COLLECTION),
     where("user_id", "==", userId),
-    where("timestamp", ">=", Timestamp.fromDate(startDate)),
-    orderBy("timestamp", "desc")
+    orderBy("timestamp", "desc"),
+    limit(limitCount)
   );
 
   const snapshot = await getDocs(q);
@@ -335,7 +332,7 @@ export const getRecentMemos = async (userId: string, encryptionKey: CryptoKey | 
 
     if (description && description !== "[Locked Data]") {
       const normalized = description.trim();
-      const key = `${normalized}_${type}`;
+      const key = `${normalized.toLowerCase()}_${type}`;
       if (!memosMap.has(key)) {
         memosMap.set(key, { desc: normalized, cat: category, type });
       }

@@ -8,16 +8,13 @@ import { LayoutDashboard, PieChart, LogOut, Plus, Briefcase } from "lucide-react
 import { useAuth } from "@/lib/firebase/auth";
 import { DataProvider } from "@/lib/DataContext";
 import { PortfolioProvider } from "@/lib/PortfolioContext";
+import { ModalProvider, useModal } from "@/lib/ModalContext";
 
-export default function DashboardShell({ children }: { children: React.ReactNode }) {
+function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const { user, preferences, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const { openAddTransaction, openAddPortfolio } = useModal();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,27 +30,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   const displayName = preferences?.customDisplayName || user?.displayName || 'User';
 
-  if (!isMounted) {
-    return (
-      <div className="flex h-screen w-full bg-background text-on-surface overflow-hidden relative font-sans">
-        <div className="hidden w-72 flex-col m-5 mr-0 rounded-[2.5rem] glass-card border-white/5 md:flex z-50 bg-white/[0.01]" />
-        <main className="flex-1 flex flex-col relative min-w-0 bg-background/50 animate-pulse">
-           <div className="flex-1 px-4 pt-4 md:px-12 md:pt-2 lg:px-16 lg:pt-2">
-             {children}
-           </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <DataProvider>
-      <PortfolioProvider>
-        <div className="flex h-screen w-full bg-background text-on-surface overflow-hidden relative font-sans selection:bg-primary/30 selection:text-white">
-          {/* Background Ornaments */}
-          <div className="bg-ornament bg-blob-primary opacity-20 blur-[120px]" />
-          <div className="bg-ornament bg-blob-secondary opacity-10 blur-[150px] -top-20" />
-          <div className="bg-ornament bg-blob-tertiary opacity-10 blur-[180px] -bottom-40" />
+    <div className="flex h-screen w-full bg-background text-on-surface overflow-hidden relative font-sans selection:bg-primary/30 selection:text-white">
+      {/* Background Ornaments */}
+      <div className="bg-ornament bg-blob-primary opacity-20 blur-[120px]" />
+      <div className="bg-ornament bg-blob-secondary opacity-10 blur-[150px] -top-20" />
+      <div className="bg-ornament bg-blob-tertiary opacity-10 blur-[180px] -bottom-40" />
 
           {/* Desktop Sidebar */}
           <aside className="hidden w-72 flex-col m-5 mr-0 rounded-[2.5rem] glass-card backdrop-blur-[60px] border-white/5 md:flex z-50 bg-white/[0.01] shadow-2xl">
@@ -188,10 +170,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           {(pathname === "/" || pathname === "/portfolio") && (
             <button
               onClick={() => {
-                const eventName = pathname === "/" ? "pl-open-add-transaction" : "pl-open-add-portfolio";
-                window.dispatchEvent(new CustomEvent(eventName));
+                if (pathname === "/") {
+                  openAddTransaction();
+                } else {
+                  openAddPortfolio();
+                }
               }}
               className="fixed bottom-28 md:bottom-12 right-6 md:right-12 z-[60] flex items-center gap-3 h-14 md:h-16 px-6 md:px-8 rounded-full prism-orb border border-white/10 group cursor-pointer overflow-hidden backdrop-blur-3xl transition-all duration-500 hover:scale-[1.05] shadow-2xl animate-in fade-in slide-in-from-bottom-5 duration-1000"
+              aria-label={pathname === "/" ? "Log new transaction record" : "Add new portfolio asset"}
             >
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 pointer-events-none group-hover:bg-primary/20 transition-all duration-700" />
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -207,7 +193,37 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             </button>
           )}
         </div>
+  );
+}
+
+export default function DashboardShell({ children }: { children: React.ReactNode }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="flex h-screen w-full bg-background text-on-surface overflow-hidden relative font-sans">
+        <div className="hidden w-72 flex-col m-5 mr-0 rounded-[2.5rem] glass-card border-white/5 md:flex z-50 bg-white/[0.01]" />
+        <main className="flex-1 flex flex-col relative min-w-0 bg-background/50 animate-pulse">
+           <div className="flex-1 px-4 pt-4 md:px-12 md:pt-2 lg:px-16 lg:pt-2">
+             {children}
+           </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <DataProvider>
+      <PortfolioProvider>
+        <ModalProvider>
+          <DashboardShellContent>{children}</DashboardShellContent>
+        </ModalProvider>
       </PortfolioProvider>
     </DataProvider>
   );
 }
+

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/firebase/auth";
-import { deriveKeyFromPin, CryptoUtils, exportVaultKey } from "@/lib/cryptography";
+import { deriveKeyFromPin, CryptoUtils, exportVaultKey, generateSecureSalt } from "@/lib/cryptography";
 import { 
   updateUserPreferences, 
   getAllUserTransactions, 
@@ -149,7 +149,7 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
       setMigrationStats({ current: 0, total });
 
       // 3. Prepare NEW salt and key
-      const newSalt = crypto.randomUUID();
+      const newSalt = generateSecureSalt();
       const newKey = await deriveKeyFromPin(newPin, newSalt);
 
       // 4. Re-encrypt Transactions

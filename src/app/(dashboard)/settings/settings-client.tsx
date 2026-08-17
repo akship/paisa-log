@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/firebase/auth";
 import { updateUserPreferences } from "@/lib/firebase/firestore";
 import { BASE_EXPENSE_CATEGORIES, BASE_INCOME_CATEGORIES, EXPENSE_REMAP, INCOME_REMAP } from "@/lib/constants";
 import { Save, User, CheckCircle2, Hash, ArrowDownRight, ArrowUpRight, Plus, X, ShieldCheck, Key, Lock, AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import ChangePinModal from "@/components/auth/ChangePinModal";
 import PageHeader from "@/components/layout/PageHeader";
 import SectionHeader from "@/components/layout/SectionHeader";
@@ -70,7 +71,7 @@ function SettingsContent() {
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error("Error updating preferences:", error);
-      alert("Failed to save settings");
+      toast.error("Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -85,7 +86,7 @@ function SettingsContent() {
     const value = input.trim();
     if (!value) return;
     if (list.includes(value)) {
-      alert("Category already exists");
+      toast.error("Category already exists");
       return;
     }
 

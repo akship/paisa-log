@@ -1,79 +1,57 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper: Check if a user owns the document and is not trying to change the owner
-    function isOwner(currentData) {
-      return request.auth != null && currentData.user_id == request.auth.uid;
+    function isSignedIn() { return request.auth != null; }
+    function getGroup(groupId) { return get(/databases/$(database)/documents/groups/$(groupId)).data; }
+    function isOwner(groupId) { return isSignedIn() && request.auth.uid == getGroup(groupId).ownerId; }
+    function isApprovedEditor(groupId) { return isSignedIn() && request.auth.uid in getGroup(groupId).approvedEditors; }
+    function canEdit(groupId) { return isOwner(groupId) || isApprovedEditor(groupId); }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      allow update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
     }
 
-    // Helper: Check if the incoming data preserves ownership
-    function preservesOwnership() {
-      return request.resource.data.user_id == request.auth.uid;
+    match /transactions/{txId} {
+      allow read: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
-    // Helper: General Transaction Validation
-    function isValidTransaction() {
-      let data = request.resource.data;
-      let isEncrypted = data.get('isEncrypted', false);
-      
-      return data.type in ['income', 'expense']
-        && (isEncrypted 
-            ? (data.amount is string && data.category is string)
-            : (data.amount is number && data.amount != 0 && data.category is string && data.category.size() > 0)
-           );
+    match /portfolio/{itemId} {
+      allow read: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
-    // Helper: General Portfolio Validation
-    function isValidPortfolioItem() {
-      let data = request.resource.data;
-      let isEncrypted = data.get('isEncrypted', false);
-      
-      return data.categoryGroup in ['LIQUID', 'INVESTMENTS', 'RECEIVABLES', 'LIABILITIES']
-        && (isEncrypted
-            ? (data.amount is string && data.name is string)
-            : (data.amount is number && data.name is string && data.name.size() > 0)
-           );
+    match /portfolio_history/{id} {
+      allow read: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
-    // Allow users to access their own transactions
-    match /transactions/{transactionId} {
-      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
-      allow create: if request.auth != null 
-                    && preservesOwnership() 
-                    && isValidTransaction()
-                    && request.resource.data.timestamp is timestamp;
-      allow update: if isOwner(resource.data) 
-                    && preservesOwnership() 
-                    && isValidTransaction()
-                    && request.resource.data.user_id == resource.data.user_id;
-      allow delete: if isOwner(resource.data);
-    }
-    
-    // Allow users to access their own portfolio assets/liabilities
-    match /portfolio/{portfolioId} {
-      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
-      allow create: if request.auth != null 
-                    && preservesOwnership() 
-                    && isValidPortfolioItem();
-      allow update: if isOwner(resource.data) 
-                    && preservesOwnership() 
-                    && isValidPortfolioItem()
-                    && request.resource.data.user_id == resource.data.user_id;
-      allow delete: if isOwner(resource.data);
-    }
-
-    // Allow users to access their own portfolio history snapshots
-    match /portfolio_history/{snapshotId} {
-      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
-      allow create: if request.auth != null && preservesOwnership();
-      allow update: if isOwner(resource.data) && preservesOwnership();
-      allow delete: if isOwner(resource.data);
-    }
-
-    // Allow users to access their own profile/preferences
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    match /groups/{groupId} {
+      allow read: if isSignedIn() && (canEdit(groupId) || (resource.data.members != null && request.auth.uid in resource.data.members));
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isOwner(groupId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if false;
+      match /transactions/{txId} {
+        allow read: if isSignedIn() && (canEdit(groupId) || (getGroup(groupId).members != null && request.auth.uid in getGroup(groupId).members));
+        allow create: if canEdit(groupId);
+        allow update: if canEdit(groupId) && request.resource.data.amount == resource.data.amount && request.resource.data.paidBy == resource.data.paidBy;
+        allow delete: if isOwner(groupId);
+      }
+      match /accessRequests/{requestUid} {
+        allow read: if isSignedIn() && (request.auth.uid == requestUid || isOwner(groupId));
+        allow create: if isSignedIn() && request.auth.uid == requestUid && request.resource.data.uid == requestUid && request.resource.data.status == 'pending';
+        allow update: if isOwner(groupId);
+        allow delete: if false;
+      }
     }
   }
 }

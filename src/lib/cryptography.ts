@@ -9,6 +9,19 @@ const DERIVATION_ALGORITHM = "PBKDF2";
 const HASH_ALGORITHM = "SHA-256";
 const ITERATIONS = 100000;
 const KEY_LENGTH = 256;
+const SALT_BYTE_LENGTH = 16;
+
+/**
+ * Generates a cryptographically strong random salt (16 bytes, base64 encoded).
+ */
+export function generateSecureSalt(): string {
+  const saltBytes = window.crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH));
+  const chunks: string[] = [];
+  for (let i = 0; i < saltBytes.length; i++) {
+    chunks.push(String.fromCharCode(saltBytes[i]));
+  }
+  return btoa(chunks.join(""));
+}
 
 /**
  * Derives a CryptoKey from a 6-digit PIN and a salt.

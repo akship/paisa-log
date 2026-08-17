@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, IndianRupee, Edit2, Trash2, ChevronDown, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Transaction } from "@/lib/firebase/firestore";
@@ -15,11 +15,13 @@ interface RecentTransactionsProps {
 }
 
 export default function RecentTransactions({ onEdit, onDelete }: RecentTransactionsProps) {
-  const { transactions, categories: dataCategories, loadMore, hasMore, transactionsLoading: loading } = useData();
+  const { transactions, categories: dataCategories, loadMore, loadFullHistory, hasMore, isFullHistoryLoaded, transactionsLoading: loading } = useData();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [displayLimit, setDisplayLimit] = useState(50);
+
+  const isFilterActive = searchTerm.trim() !== "" || selectedCategory !== "All";
 
   const filteredTransactions = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
@@ -34,6 +36,13 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
     });
   }, [transactions, searchTerm, selectedCategory]);
 
+  // Auto-fetch full history when a search/filter is active and no matches are found in currently loaded data
+  useEffect(() => {
+    if (isFilterActive && filteredTransactions.length === 0 && hasMore && !loading && !isFullHistoryLoaded) {
+      loadFullHistory();
+    }
+  }, [isFilterActive, filteredTransactions.length, hasMore, loading, isFullHistoryLoaded, loadFullHistory]);
+
   const displayedTransactions = useMemo(() => {
     return filteredTransactions.slice(0, displayLimit);
   }, [filteredTransactions, displayLimit]);
@@ -42,8 +51,9 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
     const nextLimit = displayLimit + 50;
     setDisplayLimit(nextLimit);
 
-    // If we are reaching the end of currently loaded transactions, trigger a background fetch
-    if (nextLimit > transactions.length && hasMore) {
+    if (hasMore && !isFullHistoryLoaded) {
+      loadFullHistory();
+    } else if (nextLimit > transactions.length && hasMore) {
       loadMore();
     }
   };
@@ -59,16 +69,19 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
               <input
                 type="text"
                 placeholder="Scan records..."
+                aria-label="Scan records"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl pl-12 pr-6 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/30 transition-all"
+                className="w-full bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl pl-12 pr-6 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary/30 transition-all"
               />
             </div>
 
             <div className="relative">
               <button
                 onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all text-xs font-black uppercase tracking-widest ${selectedCategory !== "All"
+                aria-label="Filter records by category"
+                aria-expanded={showCategoryFilter}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all text-xs font-black uppercase tracking-widest cursor-pointer ${selectedCategory !== "All"
                     ? "border-primary/40 bg-primary/10 text-primary shadow-glow-primary/10"
                     : "border-white/5 bg-white/5 text-white/60 hover:bg-white/10"
                   }`}
@@ -162,11 +175,15 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
               </div>
             </div>
 
-            <h3 className="text-2xl font-black font-display mb-3 tracking-tighter text-white drop-shadow-glow">No Records Detected</h3>
+            <h3 className="text-2xl font-black font-display mb-3 tracking-tighter text-white drop-shadow-glow">
+              {isFilterActive && (hasMore || loading) ? "Scanning Older Records..." : "No Records Detected"}
+            </h3>
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-on-surface-variant opacity-40 max-w-[280px] leading-relaxed">
-              {searchTerm || selectedCategory !== "All"
-                ? "The void remains silent. Adjust your filters to scan a different sector."
-                : "Your financial ledger is a clean slate. Begin your journey by adding a record."}
+              {isFilterActive && (hasMore || loading)
+                ? "Searching deeper into your financial history for matching records..."
+                : isFilterActive
+                  ? "The void remains silent. Adjust your filters to scan a different sector."
+                  : "Your financial ledger is a clean slate. Begin your journey by adding a record."}
             </p>
 
             <style jsx global>{`
@@ -234,13 +251,15 @@ export default function RecentTransactions({ onEdit, onDelete }: RecentTransacti
                     <div className="flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-4 sm:group-hover:translate-x-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
-                        className="p-2 rounded-xl bg-white/[0.03] text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90"
+                        aria-label={`Edit ${tx.description || tx.category}`}
+                        className="p-2 rounded-xl bg-white/[0.03] text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90 cursor-pointer"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
-                        className="p-2 rounded-xl bg-white/[0.03] text-on-surface-variant hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 transition-all border border-white/5 active:scale-90"
+                        aria-label={`Delete ${tx.description || tx.category}`}
+                        className="p-2 rounded-xl bg-white/[0.03] text-on-surface-variant hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 transition-all border border-white/5 active:scale-90 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

@@ -9,17 +9,18 @@ import { useAuth } from "@/lib/firebase/auth";
 import { useData } from "@/lib/DataContext";
 import { useScrollLock } from "@/lib/hooks/useScrollLock";
 
+import { useModal } from "@/lib/ModalContext";
+import toast from "react-hot-toast";
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   initialData?: Transaction | null;
 }
 
-// Module-level variable to persist across modal opens/closes without refreshing the page
-let lastDate = new Date().toISOString().split('T')[0];
-
 export default function AddTransactionModal({ isOpen, onClose, initialData }: Props) {
   const { user, encryptionKey } = useAuth();
+  const { confirm } = useModal();
   const [mounted, setMounted] = useState(false);
   useScrollLock(isOpen);
 
@@ -27,7 +28,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(() => lastDate);
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<{ desc: string, cat: string }[]>([]);
@@ -45,13 +46,15 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
     const list = type === "expense" ? dataCategories.expense : dataCategories.income;
     const sorted = [...list];
 
-    // Ensure initialData category is present even if disabled
-    if (initialData && initialData.type === type && !sorted.includes(initialData.category)) {
+    // Ensure category is present even if disabled or from suggestion
+    if (category && !sorted.includes(category)) {
+      sorted.push(category);
+    } else if (initialData && initialData.type === type && !sorted.includes(initialData.category)) {
       sorted.push(initialData.category);
     }
 
     return sorted;
-  }, [dataCategories, type, initialData]);
+  }, [dataCategories, type, category, initialData]);
 
   // Set default category when type changes or categories load
   useEffect(() => {
@@ -76,12 +79,11 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
       setType("expense");
       setAmount("");
       setDescription("");
-      setDate(lastDate);
-      // Category will be set by the other useEffect
+      setDate(new Date().toISOString().split('T')[0]);
     }
   }, [initialData, isOpen]);
 
-  // Generate suggestions from recent history (last 3 months)
+  // Generate suggestions from recent history
   useEffect(() => {
     if (isOpen) {
       const sugg = recentMemos.filter(m => m.type === type);
@@ -91,29 +93,17 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
 
   if (!isOpen || !mounted) return null;
 
-  const filteredSuggestions = suggestions.filter(s =>
-    s.desc.toLowerCase().includes(description.toLowerCase()) && s.desc !== description
-  ).slice(0, 5);
+  const filteredSuggestions = suggestions.filter(s => {
+    const query = description.trim().toLowerCase();
+    if (!query) return true;
+    return s.desc.toLowerCase().includes(query) && s.desc.toLowerCase() !== query;
+  }).slice(0, 5);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !amount || isNaN(Number(amount))) return;
-
+  const saveRecord = async (numAmount: number, txDate: Date) => {
+    if (!user) return;
     setLoading(true);
-    const numAmount = Math.floor(Number(amount));
-    const txDate = new Date(date);
-
     try {
       if (!initialData) {
-        // Duplicate Check only for new entries
-        const isDuplicate = await checkDuplicateTransaction(user.uid, numAmount, txDate, category, description, encryptionKey);
-        if (isDuplicate) {
-          if (!window.confirm(`A transaction for ${formatINR(numAmount)} was already logged today. Proceed anyway?`)) {
-            setLoading(false);
-            return;
-          }
-        }
-
         await addTransaction({
           user_id: user.uid,
           type,
@@ -122,6 +112,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
           description,
           timestamp: txDate
         }, encryptionKey);
+        toast.success("Transaction recorded");
       } else if (initialData.id) {
         await updateTransaction(initialData.id, {
           type,
@@ -130,15 +121,44 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
           description,
           timestamp: txDate
         }, encryptionKey);
+        toast.success("Transaction updated");
       }
-
       onClose();
     } catch (error: any) {
       console.error("Error saving transaction:", error);
-      alert("Failed to save transaction: " + (error.message || "Unknown error"));
+      toast.error("Failed to save: " + (error.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !amount || isNaN(Number(amount))) return;
+
+    const numAmount = Math.floor(Number(amount));
+    const txDate = new Date(date);
+
+    if (!initialData) {
+      setLoading(true);
+      const isDuplicate = await checkDuplicateTransaction(user.uid, numAmount, txDate, category, description, encryptionKey);
+      setLoading(false);
+
+      if (isDuplicate) {
+        confirm({
+          title: "Potential Duplicate",
+          message: `A transaction for ${formatINR(numAmount)} was already logged on this date. Do you want to log it again?`,
+          confirmText: "Log Duplicate",
+          variant: "warning",
+          onConfirm: async () => {
+            await saveRecord(numAmount, txDate);
+          }
+        });
+        return;
+      }
+    }
+
+    await saveRecord(numAmount, txDate);
   };
 
   return createPortal(
@@ -171,7 +191,8 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
           </div>
           <button
             onClick={onClose}
-            className="rounded-2xl p-2.5 bg-white/5 text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90"
+            aria-label="Close dialog"
+            className="rounded-2xl p-2.5 bg-white/5 text-on-surface-variant hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -290,10 +311,7 @@ export default function AddTransactionModal({ isOpen, onClose, initialData }: Pr
                   type="date"
                   required
                   value={date}
-                  onChange={(e) => {
-                    setDate(e.target.value);
-                    lastDate = e.target.value;
-                  }}
+                  onChange={(e) => setDate(e.target.value)}
                   className="w-full rounded-2xl bg-white/[0.02] border border-white/5 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest text-on-surface focus:outline-none focus:border-primary/20 focus:bg-white/[0.04] transition-all [color-scheme:dark] cursor-pointer"
                 />
               </div>

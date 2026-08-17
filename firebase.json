@@ -1,6 +1,13 @@
 {
   "hosting": {
-    "source": ".",
+    "public": "out",
+    "cleanUrls": true,
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -52,7 +59,18 @@
     ]
   },
   "firestore": {
+    "database": "(default)",
+    "location": "asia-south1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "anonymous": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Kharcha Log",
+        "supportEmail": "akships25@gmail.com"
+      }
+    }
   }
 }

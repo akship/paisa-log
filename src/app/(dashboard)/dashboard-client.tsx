@@ -5,11 +5,12 @@ import { Transaction, deleteTransaction } from "@/lib/firebase/firestore";
 import { useAuth } from "@/lib/firebase/auth";
 import { useData } from "@/lib/DataContext";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
-import DeleteConfirmModal from "@/components/transactions/DeleteConfirmModal";
 import PageHeader from "@/components/layout/PageHeader";
 import SummaryGrid from "@/components/dashboard/SummaryGrid";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import PageLoading from "@/components/layout/PageLoading";
+
+import { useModal } from "@/lib/ModalContext";
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -22,44 +23,31 @@ function DashboardContent() {
     preferences 
   } = useData();
 
-  // Modal States
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { isAddTxOpen, editingTx, openAddTransaction, closeAddTransaction, confirm } = useModal();
 
   const displayName = preferences?.customDisplayName || user?.displayName?.split(' ')[0] || 'User';
 
-  // Handle Global FAB Action
-  useEffect(() => {
-    const handleOpenModal = () => setIsAddModalOpen(true);
-    window.addEventListener('pl-open-add-transaction', handleOpenModal);
-    return () => window.removeEventListener('pl-open-add-transaction', handleOpenModal);
-  }, []);
-
   const handleEdit = (tx: Transaction) => {
-    setSelectedTransaction(tx);
-    setIsAddModalOpen(true);
+    openAddTransaction(tx);
   };
 
   const handleDeleteClick = (tx: Transaction) => {
-    setSelectedTransaction(tx);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!selectedTransaction?.id) return;
-    setIsDeleting(true);
-    try {
-      await deleteTransaction(selectedTransaction.id);
-      setIsDeleteModalOpen(false);
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Failed to delete transaction");
-    } finally {
-      setIsDeleting(false);
-      setSelectedTransaction(null);
-    }
+    if (!tx.id) return;
+    const txId = tx.id;
+    confirm({
+      title: "Expunge Record",
+      message: `Are you sure you want to delete "${tx.description || tx.category}"? This action cannot be undone.`,
+      confirmText: "Delete Record",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteTransaction(txId);
+        } catch (err) {
+          console.error("Delete error:", err);
+          throw err;
+        }
+      }
+    });
   };
 
   if ((loading && transactions.length === 0) || error) {
@@ -93,23 +81,9 @@ function DashboardContent() {
       />
 
       <AddTransactionModal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setSelectedTransaction(null);
-        }}
-        initialData={selectedTransaction}
-      />
-
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setSelectedTransaction(null);
-        }}
-        onConfirm={confirmDelete}
-        transaction={selectedTransaction}
-        loading={isDeleting}
+        isOpen={isAddTxOpen}
+        onClose={closeAddTransaction}
+        initialData={editingTx}
       />
     </div>
   );

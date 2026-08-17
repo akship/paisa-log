@@ -41,5 +41,5 @@ export function useAnalyticsAggregation(filteredTransactions: Transaction[], dat
       incomeByCategory: incomeCatSum,
       transactionsByCategory
     };
-  }, [filteredTransactions]);
+  }, [filteredTransactions, dataCategories]);
 }

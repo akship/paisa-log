@@ -2,11 +2,38 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth";
-import { deriveKeyFromPin, CryptoUtils } from "@/lib/cryptography";
+import { deriveKeyFromPin, CryptoUtils, generateSecureSalt } from "@/lib/cryptography";
 import { updateUserPreferences, getAllUserTransactions, getAllUserPortfolioItems, updateTransaction, updatePortfolioItem } from "@/lib/firebase/firestore";
 import { VAULT_CANARY } from "@/lib/constants";
-import { Lock, ShieldCheck, RefreshCw, AlertCircle, Check } from "lucide-react";
+import { Lock, ShieldCheck, RefreshCw, AlertCircle, Check, Clock } from "lucide-react";
 import toast from "react-hot-toast";
+
+const LOCKOUT_STORAGE_KEY = "pl_vault_lockout";
+
+interface LockoutState {
+  attempts: number;
+  lockedUntil: number;
+}
+
+function getStoredLockout(): LockoutState {
+  if (typeof window === "undefined") return { attempts: 0, lockedUntil: 0 };
+  try {
+    const raw = localStorage.getItem(LOCKOUT_STORAGE_KEY);
+    if (!raw) return { attempts: 0, lockedUntil: 0 };
+    return JSON.parse(raw);
+  } catch {
+    return { attempts: 0, lockedUntil: 0 };
+  }
+}
+
+function setStoredLockout(state: LockoutState) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LOCKOUT_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
 
 export default function EncryptionGate({ children }: { children: React.ReactNode }) {
   const { user, preferences, encryptionKey, setEncryptionKey, loading: authLoading, isVaultLoading } = useAuth();
@@ -17,12 +44,30 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
   const [hasConsented, setHasConsented] = useState(false);
   const [migrationStats, setMigrationStats] = useState({ current: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [isThrottled, setIsThrottled] = useState(false);
+  const [lockoutRemaining, setLockoutRemaining] = useState<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Persistent lockout timer
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const checkLockout = () => {
+      const { lockedUntil } = getStoredLockout();
+      const now = Date.now();
+      if (lockedUntil > now) {
+        setLockoutRemaining(Math.ceil((lockedUntil - now) / 1000));
+      } else {
+        setLockoutRemaining(0);
+      }
+    };
+
+    checkLockout();
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
+  }, [isMounted]);
 
   // During SSR/Prerendering, we must render children to allow the Next.js 
   // pre-renderer to validate nested routes (e.g., for unstable_instant).
@@ -46,6 +91,7 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
   }
 
   const isSetupMode = !preferences?.encryptionSalt;
+  const isThrottled = lockoutRemaining > 0;
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +111,7 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
 
       // Initial Setup Case
       if (!salt) {
-        salt = crypto.randomUUID();
+        salt = generateSecureSalt();
         await updateUserPreferences(user.uid, { encryptionSalt: salt });
         isInitialSetup = true;
       }
@@ -80,7 +126,6 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
             throw new Error("Invalid PIN");
           }
         } catch (err) {
-          // Failure logic moved to catch block for consistency
           throw new Error("Invalid PIN");
         }
       } else {
@@ -93,7 +138,8 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
       }
       
       setEncryptionKey(key);
-      setAttempts(0);
+      setStoredLockout({ attempts: 0, lockedUntil: 0 });
+      setLockoutRemaining(0);
 
       // Trigger Migration if in setup mode
       if (isSetupMode) {
@@ -107,14 +153,21 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
       }
       
       if (isIncorrectPin) {
-        setAttempts(prev => prev + 1);
-        setError(`Incorrect PIN. Attempt ${attempts + 1}${attempts >= 2 ? ". Please slow down." : ""}`);
-        setIsThrottled(true);
-        // Clear PIN on failure for extra friction
+        const current = getStoredLockout();
+        const nextAttempts = current.attempts + 1;
+        
+        // Exponential backoff: 3rd fail = 5s, 4th = 15s, 5th = 30s, 6th+ = 60s
+        let penaltySeconds = 2;
+        if (nextAttempts >= 6) penaltySeconds = 60;
+        else if (nextAttempts >= 5) penaltySeconds = 30;
+        else if (nextAttempts >= 4) penaltySeconds = 15;
+        else if (nextAttempts >= 3) penaltySeconds = 5;
+
+        const lockedUntil = Date.now() + (penaltySeconds * 1000);
+        setStoredLockout({ attempts: nextAttempts, lockedUntil });
+        setLockoutRemaining(penaltySeconds);
+        setError(`Incorrect PIN (Attempt ${nextAttempts}). Cooldown active.`);
         setPin("");
-        // Artificial delay to prevent brute-forcing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setIsThrottled(false);
       } else {
         setError("Failed to unlock vault. Check your connection.");
       }
@@ -216,8 +269,8 @@ export default function EncryptionGate({ children }: { children: React.ReactNode
               >
                 {isThrottled ? (
                   <>
-                    <RefreshCw className="h-4 w-4 animate-spin text-tertiary" />
-                    Cooling down...
+                    <Clock className="h-4 w-4 animate-pulse text-tertiary" />
+                    Cooldown ({lockoutRemaining}s)...
                   </>
                 ) : isDeriving ? (
                   <>

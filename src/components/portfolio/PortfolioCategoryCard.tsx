@@ -5,6 +5,8 @@ import { PortfolioItem, PortfolioCategoryGroup, deletePortfolioItem } from "@/li
 import { formatINR } from "@/lib/utils";
 import { Landmark, TrendingUp, HandCoins, CreditCard, Trash2, Edit2 } from "lucide-react";
 
+import { useModal } from "@/lib/ModalContext";
+
 interface Props {
   group: PortfolioCategoryGroup;
   items: PortfolioItem[];
@@ -21,14 +23,21 @@ const GROUP_CONFIG = {
 };
 
 export default function PortfolioCategoryCard({ group, items, totalAssets, onEdit, onAdd }: Props) {
+  const { confirm } = useModal();
   const config = GROUP_CONFIG[group];
   const total = items.reduce((sum, item) => sum + item.amount, 0);
   const weight = totalAssets && totalAssets > 0 ? (total / totalAssets) * 100 : 0;
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to remove this ledger entry?")) {
-      await deletePortfolioItem(id);
-    }
+  const handleDelete = (id: string, name: string) => {
+    confirm({
+      title: "Remove Ledger Item",
+      message: `Are you sure you want to remove "${name}" from ${config.label}?`,
+      confirmText: "Remove Entry",
+      variant: "danger",
+      onConfirm: async () => {
+        await deletePortfolioItem(id);
+      }
+    });
   };
 
   return (
@@ -89,15 +98,17 @@ export default function PortfolioCategoryCard({ group, items, totalAssets, onEdi
                       <button 
                         onClick={() => !isLocked && onEdit(item)}
                         disabled={isLocked}
-                        className={`p-2 rounded-xl bg-white/5 transition-all ${isLocked ? 'opacity-20 cursor-not-allowed' : 'text-on-surface-variant hover:text-white hover:bg-primary/20'}`}
+                        className={`p-2 rounded-xl bg-white/5 transition-all cursor-pointer ${isLocked ? 'opacity-20 cursor-not-allowed' : 'text-on-surface-variant hover:text-white hover:bg-primary/20'}`}
                         title={isLocked ? "Cannot edit locked data" : "Update"}
+                        aria-label={`Edit ${item.name}`}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button 
-                        onClick={() => item.id && handleDelete(item.id)}
-                        className="p-2 rounded-xl bg-white/5 text-on-surface-variant hover:text-white hover:bg-tertiary/20 transition-all"
+                        onClick={() => item.id && handleDelete(item.id, item.name)}
+                        className="p-2 rounded-xl bg-white/5 text-on-surface-variant hover:text-white hover:bg-tertiary/20 transition-all cursor-pointer"
                         title="Remove"
+                        aria-label={`Remove ${item.name}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

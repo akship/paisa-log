@@ -7,6 +7,7 @@ import { Edit2, Trash2, Calendar, History, ShieldAlert, ChevronDown, List } from
 import { toast } from "react-hot-toast";
 import EditSnapshotModal from "./EditSnapshotModal";
 import { usePortfolio } from "@/lib/PortfolioContext";
+import { useModal } from "@/lib/ModalContext";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -17,6 +18,7 @@ interface Props {
 
 export default function SnapshotManager({ history, encryptionKey }: Props) {
   const { historyLimit, loadFullHistory, portfolioLoading } = usePortfolio();
+  const { confirm } = useModal();
   const [editingSnapshot, setEditingSnapshot] = useState<PortfolioSnapshot | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isExpanding, setIsExpanding] = useState(false);
@@ -26,16 +28,22 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
     [history]
   );
 
-  const handleDelete = async (id: string, month: string) => {
-    if (window.confirm(`Are you sure you want to permanently delete the snapshot for ${month}? This cannot be undone.`)) {
-      try {
-        await deletePortfolioSnapshot(id);
-        toast.success(`Snapshot for ${month} deleted`);
-      } catch (err) {
-        toast.error("Failed to delete snapshot");
-        console.error(err);
+  const handleDelete = (id: string, month: string) => {
+    confirm({
+      title: "Expunge Snapshot",
+      message: `Are you sure you want to permanently delete the snapshot for ${month}? This action cannot be undone.`,
+      confirmText: "Delete Snapshot",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deletePortfolioSnapshot(id);
+          toast.success(`Snapshot for ${month} deleted`);
+        } catch (err) {
+          toast.error("Failed to delete snapshot");
+          console.error(err);
+        }
       }
-    }
+    });
   };
 
   const handleShowMore = () => {
@@ -106,13 +114,13 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
                      </div>
                   </div>
                 )}
-  
-                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                   {!isLocked && s.items && (
                     <button
                       onClick={() => s.id && setExpandedId(expandedId === s.id ? null : s.id)}
-                      className={`p-3 rounded-2xl border transition-all ${expandedId === s.id ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-white/5 border-transparent text-white/40 hover:text-white'}`}
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer ${expandedId === s.id ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-white/5 border-transparent text-white/40 hover:text-white'}`}
                       title="Show Breakdown"
+                      aria-label="Toggle snapshot asset breakdown"
                     >
                       <ChevronDown className={`h-4 w-4 transition-transform duration-500 ${expandedId === s.id ? "rotate-180" : ""}`} />
                     </button>
@@ -120,15 +128,17 @@ export default function SnapshotManager({ history, encryptionKey }: Props) {
                   <button
                     onClick={() => !isLocked && setEditingSnapshot(s)}
                     disabled={isLocked}
-                    className={`p-3 rounded-2xl bg-white/5 transition-all ${isLocked ? 'opacity-20 cursor-not-allowed' : 'text-white/40 hover:text-white hover:bg-blue-500/20 hover:border-blue-500/30 border border-transparent'}`}
+                    className={`p-3 rounded-2xl bg-white/5 transition-all ${isLocked ? 'opacity-20 cursor-not-allowed' : 'text-white/40 hover:text-white hover:bg-blue-500/20 hover:border-blue-500/30 border border-transparent cursor-pointer'}`}
                     title={isLocked ? "Cannot edit locked data" : "Adjust Weights"}
+                    aria-label={`Edit snapshot for ${s.monthYear}`}
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => s.id && handleDelete(s.id, s.monthYear)}
-                    className="p-3 rounded-2xl bg-white/5 text-white/40 hover:text-rose-500 hover:bg-rose-500/20 hover:border-rose-500/30 border border-transparent transition-all"
+                    className="p-3 rounded-2xl bg-white/5 text-white/40 hover:text-rose-500 hover:bg-rose-500/20 hover:border-rose-500/30 border border-transparent transition-all cursor-pointer"
                     title="Expunge Snapshot"
+                    aria-label={`Delete snapshot for ${s.monthYear}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

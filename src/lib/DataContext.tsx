@@ -96,7 +96,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
 
-  // Fetch recent memos for suggestions (last 3 months)
+  // Fetch recent memos for suggestions (latest transactions)
   useEffect(() => {
     if (!user || !encryptionKey) {
       setRecentMemos([]);
@@ -115,6 +115,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     fetchMemos();
   }, [user, encryptionKey]);
 
+  // Sync recentMemos with loaded in-memory transactions
+  useEffect(() => {
+    if (transactions.length === 0) return;
+
+    setRecentMemos((prevMemos) => {
+      const memosMap = new Map<string, { desc: string; cat: string; type: "income" | "expense" }>();
+
+      // Prioritize loaded in-memory transactions (most recent)
+      for (const tx of transactions) {
+        if (tx.description && tx.description !== "[Locked Data]") {
+          const normalized = tx.description.trim();
+          const key = `${normalized.toLowerCase()}_${tx.type}`;
+          if (!memosMap.has(key)) {
+            memosMap.set(key, { desc: normalized, cat: tx.category, type: tx.type });
+          }
+        }
+      }
+
+      // Add other previously fetched memos
+      for (const m of prevMemos) {
+        const key = `${m.desc.trim().toLowerCase()}_${m.type}`;
+        if (!memosMap.has(key)) {
+          memosMap.set(key, m);
+        }
+      }
+
+      return Array.from(memosMap.values());
+    });
+  }, [transactions]);
+
 
   // Single subscription for transactions — shared across Overview + Analytics
   useEffect(() => {
@@ -126,7 +156,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadingRef.current = true;
-    setTransactionsLoading(transactions.length === 0);
+    setTransactionsLoading(true);
     setIsWarning(false);
     setError(null);
 
@@ -325,11 +355,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       },
       loadMore: () => {
         if (!isFullHistoryLoaded && hasMore) {
+          setTransactionsLoading(true);
           setDisplayLimit(prev => prev + 50);
         }
       },
       loadFullHistory: () => {
-        setIsFullHistoryLoaded(true);
+        if (!isFullHistoryLoaded) {
+          setTransactionsLoading(true);
+          setIsFullHistoryLoaded(true);
+        }
       },
       hasMore,
       isFullHistoryLoaded,

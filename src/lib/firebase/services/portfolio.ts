@@ -19,6 +19,13 @@ import { PortfolioItem, PortfolioSnapshot } from "./types";
 const PORTFOLIO_COLLECTION = "portfolio";
 const PORTFOLIO_HISTORY_COLLECTION = "portfolio_history";
 
+// Decryption caches for portfolio items and snapshots
+const portfolioDecryptionCache = new Map<string, PortfolioItem>();
+let lastPortfolioActiveKey: CryptoKey | null = null;
+
+const historyDecryptionCache = new Map<string, PortfolioSnapshot>();
+let lastHistoryActiveKey: CryptoKey | null = null;
+
 export const subscribeToPortfolio = (
   userId: string,
   callback: (items: PortfolioItem[]) => void,
@@ -32,10 +39,22 @@ export const subscribeToPortfolio = (
   );
 
   return onSnapshot(q, async (snapshot) => {
-    const itemPromises = snapshot.docs.map(async (doc) => {
-      const data = doc.data();
+    if (encryptionKey !== lastPortfolioActiveKey) {
+      portfolioDecryptionCache.clear();
+      lastPortfolioActiveKey = encryptionKey;
+    }
+
+    const work = snapshot.docChanges().map(async (change) => {
+      const docId = change.doc.id;
+
+      if (change.type === "removed") {
+        portfolioDecryptionCache.delete(docId);
+        return;
+      }
+
+      const data = change.doc.data();
       const item: PortfolioItem = {
-        id: doc.id,
+        id: docId,
         user_id: data.user_id,
         name: data.name,
         categoryGroup: data.categoryGroup,
@@ -47,10 +66,6 @@ export const subscribeToPortfolio = (
       };
 
       if (item.isEncrypted) {
-        item.name = "[Locked Portfolio Item]";
-        item.category = "Locked";
-        item.amount = 0;
-
         if (encryptionKey) {
           try {
             const [name, cat, amt] = await Promise.all([
@@ -62,15 +77,27 @@ export const subscribeToPortfolio = (
             item.category = cat;
             item.amount = amt;
           } catch (err) {
-            console.warn("Failed to decrypt portfolio item:", item.id);
+            item.name = "[Locked Portfolio Item]";
+            item.category = "Locked";
+            item.amount = 0;
             item.decryptionFailed = true;
           }
+        } else {
+          item.name = "[Locked Portfolio Item]";
+          item.category = "Locked";
+          item.amount = 0;
         }
       }
-      return item;
+
+      portfolioDecryptionCache.set(docId, item);
     });
 
-    const items = await Promise.all(itemPromises);
+    await Promise.all(work);
+
+    const items = snapshot.docs
+      .map(doc => portfolioDecryptionCache.get(doc.id))
+      .filter((i): i is PortfolioItem => !!i);
+
     callback(items);
   }, errorCallback);
 };
@@ -261,10 +288,22 @@ export const subscribeToPortfolioHistory = (
   }
 
   return onSnapshot(q, async (snapshot) => {
-    const historyPromises = snapshot.docs.map(async (doc) => {
-      const data = doc.data();
+    if (encryptionKey !== lastHistoryActiveKey) {
+      historyDecryptionCache.clear();
+      lastHistoryActiveKey = encryptionKey;
+    }
+
+    const work = snapshot.docChanges().map(async (change) => {
+      const docId = change.doc.id;
+
+      if (change.type === "removed") {
+        historyDecryptionCache.delete(docId);
+        return;
+      }
+
+      const data = change.doc.data();
       const s: PortfolioSnapshot = {
-        id: doc.id,
+        id: docId,
         user_id: data.user_id,
         monthYear: data.monthYear,
         totalNetWorth: data.totalNetWorth,
@@ -279,12 +318,6 @@ export const subscribeToPortfolioHistory = (
       };
 
       if (s.isEncrypted) {
-        s.totalNetWorth = 0;
-        s.liquid = 0;
-        s.investments = 0;
-        s.receivables = 0;
-        s.liabilities = 0;
-
         if (encryptionKey) {
           try {
             const [tnw, liq, inv, rec, lia, itemsStr] = await Promise.all([
@@ -303,16 +336,31 @@ export const subscribeToPortfolioHistory = (
             s.liabilities = lia;
             if (itemsStr) s.items = JSON.parse(itemsStr);
           } catch (err) {
-            console.warn("Failed to decrypt portfolio snapshot:", s.id);
-            s.totalNetWorth = 0;
+            s.totalNetWorth = -1;
+            s.liquid = 0;
+            s.investments = 0;
+            s.receivables = 0;
+            s.liabilities = 0;
             s.decryptionFailed = true;
           }
+        } else {
+          s.totalNetWorth = -1;
+          s.liquid = 0;
+          s.investments = 0;
+          s.receivables = 0;
+          s.liabilities = 0;
         }
       }
-      return s;
+
+      historyDecryptionCache.set(docId, s);
     });
 
-    const history = await Promise.all(historyPromises);
+    await Promise.all(work);
+
+    const history = snapshot.docs
+      .map(doc => historyDecryptionCache.get(doc.id))
+      .filter((s): s is PortfolioSnapshot => !!s);
+
     callback(history);
   }, errorCallback);
 };
