@@ -3,9 +3,6 @@ const nextConfig = {
   output: 'export',
   images: { unoptimized: true },
   reactStrictMode: true,
-  experimental: {
-    instantNavigationDevToolsToggle: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },
